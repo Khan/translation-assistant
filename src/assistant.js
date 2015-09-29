@@ -16,6 +16,9 @@ const GRAPHIE_REGEX = /\!\[\]\([^)]+\)/g;
 // Matches widget strings, e.g. [[☃ Expression 1]]
 const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
+// Matches all placeholders
+const PLACEHOLDER_REGEX = /__(?:MATH|GRAPHIE|WIDGET)__/g;
+
 // Matches bold strings in markdown syntax, e.g. "This is **bold**"
 const BOLD_REGEX = /\*\*.*\*\*/g;
 
@@ -298,7 +301,43 @@ function findTranslationPair(translationPairs) {
 function suggest(translationPairs, englishStrs, lang) {
     const pair = findTranslationPair(translationPairs);
     if (pair instanceof Error) {
-        return pair;
+        // For cases where we don't have any past translations to work off of,
+        // we suggest the English string with all known nltext replaced with
+        // question marks.
+        return englishStrs.map((englishStr) => {
+            const normalStr = normalizeString(englishStr);
+
+            const maths = englishStr.match(MATH_REGEX) || [];
+            const graphies = englishStr.match(GRAPHIE_REGEX) || [];
+            const widgets = englishStr.match(WIDGET_REGEX) || [];
+
+            const lines = normalStr.split(LINE_BREAK).map((line) => {
+                const placeholders = line.match(PLACEHOLDER_REGEX);
+                const nlText = line.split(PLACEHOLDER_REGEX);
+                const outputChunks = [];
+
+                if (nlText[0].trim() !== '') {
+                    outputChunks.push('?');
+                }
+                for (let i = 0; i < placeholders.length; i++) {
+                    outputChunks.push(placeholders[i]);
+                    if (nlText[i + 1].trim() !== '') {
+                        outputChunks.push('?');
+                    }
+                }
+
+                return outputChunks.join(' ');
+            });
+
+            const template = {
+                lines: lines,
+                mathMapping: maths.map((_, index) => index),
+                graphieMapping: graphies.map((_, index) => index),
+                widgetMapping: widgets.map((_, index) => index),
+            };
+
+            return [englishStr, populateTemplate(template, englishStr, lang)];
+        });
     }
 
     const [englishStr, translatedStr] = pair;

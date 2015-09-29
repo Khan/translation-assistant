@@ -30,11 +30,18 @@ describe('assistant.suggest', function() {
         );
     });
 
-    it('should return an Error if there are no valid pairs', function() {
-        const suggestion = suggest(
-            [['simplify $2x = 4$', ''], ['', 'simplifyz $2x = 4$']],
-            ['simplify $3x = 9$']);
-        expect(suggestion instanceof Error).to.be(true);
+    it('should replace nltext with ? if there are no valid pairs', function() {
+        let suggestion = suggest(
+            [],
+            ['simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]']);
+        expect(suggestion[0][1]).to.equal(
+            '? $3x = 9$\n\n? [[\u2603 Expression 1]]');
+
+        suggestion = suggest(
+            [['simplify $2x = 4$\n\nx = [[\u2603 Expression 1]]', '']],
+            ['simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]']);
+        expect(suggestion[0][1]).to.equal(
+            '? $3x = 9$\n\n? [[\u2603 Expression 1]]');
     });
 });
 
