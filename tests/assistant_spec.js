@@ -1,7 +1,7 @@
 /*global describe, it*/
 
 const expect = require('expect.js');
-const { suggest } = require('../lib/assistant');
+const { suggest, group } = require('../lib/translation-assistant');
 
 /**
  * Assert that the suggested translations match the translations.
@@ -14,14 +14,15 @@ const { suggest } = require('../lib/assistant');
  * @returns {void}
  */
 function assertSuggestions(translationPairs, englishStrs, translatedStrs) {
-    const suggestions = suggest(translationPairs, englishStrs);
+    const suggestions =
+        suggest(translationPairs, englishStrs, 'fr');
 
     for (let i = 0; i < translatedStrs.length; i++) {
         expect(suggestions[i][1]).to.equal(translatedStrs[i]);
     }
 }
 
-describe('assistant.suggest', function() {
+describe('suggest', function() {
     it('should handle no math', function() {
         assertSuggestions(
             [['Both are wrong', 'Ambas son impares']],
@@ -33,19 +34,23 @@ describe('assistant.suggest', function() {
     it('should replace nltext with ? if there are no valid pairs', function() {
         let suggestion = suggest(
             [],
-            ['simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]']);
+            ['simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]'],
+            'fr',
+            str => str);
         expect(suggestion[0][1]).to.equal(
             '? $3x = 9$\n\n? [[\u2603 Expression 1]]');
 
         suggestion = suggest(
             [['simplify $2x = 4$\n\nx = [[\u2603 Expression 1]]', '']],
-            ['simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]']);
+            ['simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]'],
+            'fr',
+            str => str);
         expect(suggestion[0][1]).to.equal(
             '? $3x = 9$\n\n? [[\u2603 Expression 1]]');
     });
 });
 
-describe('assistant.suggest (math)', function() {
+describe('suggest (math)', function() {
     it('should populate a single line template with math', function() {
         assertSuggestions(
             [['simplify $2x = 4$', 'simplifyz $2x = 4$']],
@@ -130,7 +135,7 @@ function makeGraphie() {
     return `![](${baseURL}/${id})`;
 }
 
-describe('assistant.suggest (graphie)', function() {
+describe('suggest (graphie)', function() {
     it('should handle multiple math on multiple lines', function() {
         const graphie1 = makeGraphie();
         const graphie2 = makeGraphie();
@@ -173,7 +178,7 @@ describe('assistant.suggest (graphie)', function() {
     });
 });
 
-describe('assistant.suggest (widgets)', function() {
+describe('suggest (widgets)', function() {
     it('should handle multiple math on multiple lines', function() {
         assertSuggestions(
             [['simplify [[☃ Expression 1]], answer [[☃ Expression 2]]\n\n' +
@@ -202,5 +207,27 @@ describe('assistant.suggest (widgets)', function() {
             ['[[☃ Expression 1]]'],
             ['[[☃ Expression 1]]']
         );
+    });
+});
+
+describe('group', function() {
+    it('should group strings', function() {
+        var groups = group(['simplify $8/4$', 'simplify $4/12$', 'find $x$']);
+        var groupKeys = Object.keys(groups);
+        expect(groupKeys.length).to.be(2);
+        expect(groupKeys).to.contain('simplify __MATH__');
+        expect(groupKeys).to.contain('find __MATH__');
+    });
+
+    it('should group objects', function() {
+        var groups = group([
+            { englishStr: 'simplify $8/4$' },
+            { englishStr: 'simplify $4/12$' },
+            { englishStr: 'find $x$' },
+        ], item => item.englishStr);
+        var groupKeys = Object.keys(groups);
+        expect(groupKeys.length).to.be(2);
+        expect(groupKeys).to.contain('simplify __MATH__');
+        expect(groupKeys).to.contain('find __MATH__');
     });
 });

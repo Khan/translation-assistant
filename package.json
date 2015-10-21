@@ -2,13 +2,13 @@
   "name": "translation-assistant",
   "version": "0.0.2",
   "description": "Translation assistant for perseus exercises",
-  "main": "lib/assistant.js",
+  "main": "lib/translation-assistant.js",
   "scripts": {
     "lint": "eslint src tests",
     "test": "mocha --compilers js:babel/register tests",
-    "build": "babel src/assistant.js -o lib/assistant.js",
+    "build": "babel src/translation-assistant.js -o lib/translation-assistant.js",
     "watch_test": "mocha --watch --compilers js:babel/register tests",
-    "watch_build": "babel --watch src/assistant.js -o lib/assistant.js"
+    "watch_build": "babel --watch src/translation-assistant.js -o lib/translation-assistant.js"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,9 @@
   "homepage": "https://github.com/Khan/intelligent-tm",
   "devDependencies": {
     "babel": "^5.8.23",
+    "babel-core": "^5.8.25",
     "eslint": "^1.5.1",
+    "expect.js": "^0.3.1",
     "mocha": "^2.3.3"
   }
 }

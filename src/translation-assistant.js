@@ -27,6 +27,9 @@ const BOLD_REGEX = /\*\*.*\*\*/g;
 const LINE_BREAK = '\n\n';
 
 
+const identity = x => x;
+
+
 /**
  * Normalizes a string.  This is used when determining groups so that we don't
  * create groups based on non natural language text differences.
@@ -51,92 +54,60 @@ function normalizeString(str) {
 }
 
 /**
- * Group similar strings ignoring math, graphie, and widget substrings.
+ * Group objects that contain English strings to translate.
+ *
+ * Groups are determined by the similarity between the English strings returned
+ * by calling `byGroup` on each object in `objects`.  In order to find more
+ * matches we ignore math, graphie, and widget substrings.
  *
  * Example:
- * let englishStrs = [
- *    "simplify $2/4$\n\nhint: the denominator is $2$",
- *    "simplify $3/12$\n\nhint: the denominator is $4$"
+ * let items = [
+ *    {
+ *        englishStr: "simplify $2/4$\n\nhint: the denominator is $2$",
+ *        id: 1001,
+ *    }, {
+ *        englishStr: "simplify $3/12$\n\nhint: the denominator is $4$",
+ *        id: 1002,
+ *    }
  * ];
  *
- * let { lineMatches, stringMatches } = groupStrings(englishStrings);
+ * let stringMatches = groupStrings(items, item => item.englishStr);
  *
  * The result is:
- * lineMatches = {
- *    "simplify __MATH__": [
- *        "simplify $2/4$\n\nhint: the denominator is $2$",
- *        "simplify $3/12$\n\nhint: the denominator is $4$"
- *    ],
- *    "hint: denominator is __MATH__": [
- *        "simplify $2/4$\n\nhint: the denominator is $2$",
- *        "simplify $3/12$\n\nhint: the denominator is $4$"
- *    ]
- * }
- * stringMatches = {
- *    "simplify __MATH__\n\\nhint: denominator is __MATH__": [
- *        "simplify $2/4$\n\nhint: the denominator is $2$",
- *        "simplify $3/12$\n\nhint: the denominator is $4$"
- *    ]
+ * {
+ *    "simplify __MATH__\n\\nhint: denominator is __MATH__": [{
+ *        englishStr: "simplify $2/4$\n\nhint: the denominator is $2$",
+ *        id: 1001,
+ *    }, {
+ *        englishStr: "simplify $3/12$\n\nhint: the denominator is $4$",
+ *        id: 1002,
+ *    }]
  * }
  *
- * @param {Array<String>} englishStrs An array of English strings.
- * @returns {Object} An object containing partialStrings and completeStrings.
- *          properties which are both dictionaries where the values are strings
- *          that belong in the same group according to our grouping algorithm.
+ * @param {Array} objects An array of objects to be grouped based on a related
+ *        English string to translate.
+ * @param {Function} [byGroup] A function that takes an object from `objects`
+ *        and returns the English string to translate.
+ * @returns {Object} An object where the keys are English strings to be
+ *          translated and the values are an array of objects where each
  */
-function groupStrings(englishStrs) {
-    // lineMatches contains entries where an individual line within a string
-    // matches other individual lines within other strings ignoring math,
-    // graphies, and widgets.  The key is the line after math, graphies, and
-    // widgets have been replaced with placeholders.  The values are arrays
-    // containing the origin strings.
-    const lineMatches = {};
-
+function group(objects, byGroup = identity) {
     // stringMatches contains entries where one string matches another string
     // ignoring math, graphie, and widgets.  The key is the string after math,
     // graphies, and widgets had been replaced with placeholders
-    const stringMatches = {};
+    var stringMatches = {};
 
-    englishStrs.forEach((originalStr) => {
-        const str = normalizeString(originalStr);
+    objects.forEach(function(obj) {
+        var str = normalizeString(byGroup(obj));
 
-        // We iterate over the lines to determine if any lines match or if
-        // the entire string matches.  We don't compare the strings directly
-        // because we tolerate certain differences within each line when
-        // matching, e.g. different punctuation at the end of lines.
-
-        let isStringMatch = true;
-
-        str.split(LINE_BREAK).forEach(function(line) {
-            const lastChar = line[line.length - 1];
-
-            // ignore minor punctuation changes
-            if (/\,\.\:/.test(lastChar)) {
-                line = line.substring(0, line.length - 1);
-            }
-
-            // TODO(kevinb): save original lines instead of original strings
-            if (lineMatches[line]) {
-                lineMatches[line].push(originalStr);
-            } else {
-                isStringMatch = false;
-                lineMatches[line] = [originalStr];
-            }
-        });
-
-        if (isStringMatch) {
-            if (stringMatches[str]) {
-                stringMatches[str].push(originalStr);
-            } else {
-                stringMatches[str] = [originalStr];
-            }
+        if (stringMatches[str]) {
+            stringMatches[str].push(obj);
+        } else {
+            stringMatches[str] = [obj];
         }
     });
 
-    return {
-        lineMatches,
-        stringMatches,
-    };
+    return stringMatches;
 }
 
 /**
@@ -292,19 +263,23 @@ function findTranslationPair(translationPairs) {
  *
  * @param {Array} translationPairs An array of [englishStr, translatedStr]
  *        pairs, at least one should contain non empty, non-null string.
- * @param {Array} englishStrs An array of English strings to translate.
+ * @param {Array} items An array of objects that are passed to getEnglishStr
+ *        which must return the English string to translate for that item.
  * @param {string} lang The ka_locale of the translated strings in
  *        translationPairs.
- * @returns {Array|Error} An array of pairs containing the englishStrs passed
- *          in along with the accompanying translations.
+ * @param {Function} [getEnglishStr] A function that is passed one of the items
+ *        and returns the English string to be translated.
+ * @returns {Array|Error} An array of pairs containing entries from items
+ *          along with the accompanying translations.
  */
-function suggest(translationPairs, englishStrs, lang) {
+function suggest(translationPairs, items, lang, getEnglishStr = identity) {
     const pair = findTranslationPair(translationPairs);
     if (pair instanceof Error) {
         // For cases where we don't have any past translations to work off of,
         // we suggest the English string with all known nltext replaced with
         // question marks.
-        return englishStrs.map((englishStr) => {
+        return items.map(item => {
+            const englishStr = getEnglishStr(item);
             const normalStr = normalizeString(englishStr);
 
             const maths = englishStr.match(MATH_REGEX) || [];
@@ -340,20 +315,19 @@ function suggest(translationPairs, englishStrs, lang) {
         });
     }
 
-    const [englishStr, translatedStr] = pair;
-    const template = createTemplate(englishStr, translatedStr, lang);
+    const template = createTemplate(...pair, lang);
 
     if (template instanceof Error) {
         return template;
     }
 
-    return englishStrs.map((englishStr) =>
-        [englishStr, populateTemplate(template, englishStr, lang)]);
+    return items.map(item =>
+        [item, populateTemplate(template, getEnglishStr(item), lang)]);
 }
 
 module.exports = {
     createTemplate,
     populateTemplate,
-    groupStrings,
+    group,
     suggest,
 };
