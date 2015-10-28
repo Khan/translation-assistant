@@ -326,9 +326,12 @@ function suggest(translationPairs, items, lang, getEnglishStr = identity) {
         [item, populateTemplate(template, getEnglishStr(item), lang)]);
 }
 
+
+
 module.exports = {
     createTemplate,
     populateTemplate,
     group,
     suggest,
+    normalizeString,
 };
