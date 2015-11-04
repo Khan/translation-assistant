@@ -205,6 +205,22 @@ function createTemplate(englishStr, translatedStr, lang) {
 }
 
 /**
+ * Handles any per language special case translations, e.g. Portuguese uses
+ * `sen` instead of `sin`.
+ *
+ * @param {string} math
+ * @param {string} lang
+ * @returns {string}
+ */
+function translateMath(math, lang) {
+    if (lang === 'pt') {
+        return math.replace(/\\sin/g, '\\operatorname\{sen\}');
+    } else {
+        return math;
+    }
+}
+
+/**
  * Returns a translations suggestion based the given template and englishStr.
  *
  * @param {Object} template A template object return by createTemplate.
@@ -223,10 +239,7 @@ function populateTemplate(template, englishStr, lang) {
     let graphieIndex = 0;
     let widgetIndex = 0;
 
-    if (lang === 'pt') {
-        maths = maths.map(
-            (math) => math.replace(/\\sin/g, '\\operatorname\{sen\}'));
-    }
+    maths = maths.map(translateMath);
 
     return englishLines.map((englishLine, index) => {
         const templateLine = template.lines[index];
@@ -239,6 +252,40 @@ function populateTemplate(template, englishStr, lang) {
             widgets[template.widgetMapping[widgetIndex++]]
         );
     }).join(LINE_BREAK);
+}
+
+/**
+ * Automatically translate strings that are simply math, graphies, or widgets.
+ * The translations for other items will be null, see @returns for details.
+ *
+ * @param {Array} items Objects that are passed to getEnglishStr which must
+ *        return the English string to translate for that item.
+ * @param {string} lang The ka_locale of the translated strings in
+ *        translationPairs.
+ * @param {Function} [getEnglishStr] A function that is passed one of the items
+ *        and returns the English string to be translated.
+ * @returns {Array} Pairs containing entries from items along with the
+ *          accompanying translations.
+ */
+function autoTranslatePlaceholders(items, lang, getEnglishStr) {
+    return items.map(item => {
+        const englishStr = getEnglishStr(item);
+        const normalStr = normalizeString(englishStr);
+
+        if (/^(__MATH__|__GRAPHIE__|__WIDGET__)$/.test(normalStr)) {
+            let translatedStr = englishStr;
+            if (normalStr === '__MATH__') {
+                // ignore math that might contain natural language
+                if (englishStr.indexOf('\\text') !== -1) {
+                    return [englishStr, null];
+                }
+                translatedStr = translateMath(translatedStr, lang);
+            }
+            return [item, translatedStr];
+        } else {
+            return [item, null];
+        }
+    });
 }
 
 /**
@@ -275,45 +322,10 @@ function findTranslationPair(translationPairs) {
  */
 function suggest(translationPairs, items, lang, getEnglishStr = identity) {
     const pair = findTranslationPair(translationPairs);
-    if (pair instanceof Error) {
-        // For cases where we don't have any past translations to work off of,
-        // we suggest the English string with all known nltext replaced with
-        // question marks.
-        return items.map(item => {
-            const englishStr = getEnglishStr(item);
-            const normalStr = normalizeString(englishStr);
+    const groups = group(items, getEnglishStr);
 
-            const maths = englishStr.match(MATH_REGEX) || [];
-            const graphies = englishStr.match(GRAPHIE_REGEX) || [];
-            const widgets = englishStr.match(WIDGET_REGEX) || [];
-
-            const lines = normalStr.split(LINE_BREAK).map((line) => {
-                const placeholders = line.match(PLACEHOLDER_REGEX);
-                const nlText = line.split(PLACEHOLDER_REGEX);
-                const outputChunks = [];
-
-                if (nlText[0].trim() !== '') {
-                    outputChunks.push('?');
-                }
-                for (let i = 0; i < placeholders.length; i++) {
-                    outputChunks.push(placeholders[i]);
-                    if (nlText[i + 1].trim() !== '') {
-                        outputChunks.push('?');
-                    }
-                }
-
-                return outputChunks.join(' ');
-            });
-
-            const template = {
-                lines: lines,
-                mathMapping: maths.map((_, index) => index),
-                graphieMapping: graphies.map((_, index) => index),
-                widgetMapping: widgets.map((_, index) => index),
-            };
-
-            return [englishStr, populateTemplate(template, englishStr, lang)];
-        });
+    if (pair instanceof Error || Object.keys(groups).length > 1) {
+        return autoTranslatePlaceholders(items, lang, getEnglishStr);
     }
 
     const template = createTemplate(...pair, lang);
@@ -325,8 +337,6 @@ function suggest(translationPairs, items, lang, getEnglishStr = identity) {
     return items.map(item =>
         [item, populateTemplate(template, getEnglishStr(item), lang)]);
 }
-
-
 
 module.exports = {
     createTemplate,
