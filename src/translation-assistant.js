@@ -16,18 +16,12 @@ const GRAPHIE_REGEX = /\!\[\]\([^)]+\)/g;
 // Matches widget strings, e.g. [[☃ Expression 1]]
 const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
-// Matches all placeholders
-const PLACEHOLDER_REGEX = /__(?:MATH|GRAPHIE|WIDGET)__/g;
-
 // Matches bold strings in markdown syntax, e.g. "This is **bold**"
 const BOLD_REGEX = /\*\*.*\*\*/g;
 
 // Use two line feeds to split lines because this is how Markdown delineates
 // paragraphs.
 const LINE_BREAK = '\n\n';
-
-
-const identity = x => x;
 
 
 /**
@@ -51,64 +45,6 @@ function normalizeString(str) {
         .replace(BOLD_REGEX,
             (match) => match.substring(2, match.length - 2))
         .split(LINE_BREAK).map((line) => line.trim()).join(LINE_BREAK);
-}
-
-/**
- * Group objects that contain English strings to translate.
- *
- * Groups are determined by the similarity between the English strings returned
- * by calling `byGroup` on each object in `objects`.  In order to find more
- * matches we ignore math, graphie, and widget substrings.
- *
- * Example:
- * let items = [
- *    {
- *        englishStr: "simplify $2/4$\n\nhint: the denominator is $2$",
- *        id: 1001,
- *    }, {
- *        englishStr: "simplify $3/12$\n\nhint: the denominator is $4$",
- *        id: 1002,
- *    }
- * ];
- *
- * let stringMatches = groupStrings(items, item => item.englishStr);
- *
- * The result is:
- * {
- *    "simplify __MATH__\n\\nhint: denominator is __MATH__": [{
- *        englishStr: "simplify $2/4$\n\nhint: the denominator is $2$",
- *        id: 1001,
- *    }, {
- *        englishStr: "simplify $3/12$\n\nhint: the denominator is $4$",
- *        id: 1002,
- *    }]
- * }
- *
- * @param {Array} items An array of objects to be grouped based on a related
- *        English string to translate.
- * @param {Function} [getEnglishStr] A function that is passed a value from
- *        `items` and returns the English string to translate.
- * @returns {Object} An object where the keys are English strings to be
- *          translated and the values are an array of one or more objects from
- *          items.
- */
-function group(items, getEnglishStr = identity) {
-    // stringMatches contains entries where one string matches another string
-    // ignoring math, graphie, and widgets.  The key is the string after math,
-    // graphies, and widgets had been replaced with placeholders
-    var stringMatches = {};
-
-    items.forEach(function(obj) {
-        var str = normalizeString(getEnglishStr(obj));
-
-        if (stringMatches[str]) {
-            stringMatches[str].push(obj);
-        } else {
-            stringMatches[str] = [obj];
-        }
-    });
-
-    return stringMatches;
 }
 
 /**
@@ -145,10 +81,7 @@ function getMapping(englishStr, translatedStr, lang, findRegex) {
     const mapping = [];
 
     outputs.forEach((output, outputIndex) => {
-        // TODO(kevinb): handle \text{} inside math
-        if (lang === 'pt') {
-            output = output.replace(/\\operatorname\{sen\}/g, '\\sin');
-        }
+        output = translateMath(output, lang);
         const inputIndex = inputs.indexOf(output);
         if (inputIndex === -1) {
             if (findRegex === MATH_REGEX) {
@@ -212,6 +145,7 @@ function createTemplate(englishStr, translatedStr, lang) {
  * @param {string} lang
  * @returns {string}
  */
+// TODO(kevinb): handle \text{} inside math
 function translateMath(math, lang) {
     if (lang === 'pt') {
         return math.replace(/\\sin/g, '\\operatorname\{sen\}');
@@ -239,7 +173,7 @@ function populateTemplate(template, englishStr, lang) {
     let graphieIndex = 0;
     let widgetIndex = 0;
 
-    maths = maths.map(translateMath);
+    maths = maths.map(math => translateMath(math, lang));
 
     return englishLines.map((englishLine, index) => {
         const templateLine = template.lines[index];
@@ -255,93 +189,170 @@ function populateTemplate(template, englishStr, lang) {
 }
 
 /**
- * Automatically translate strings that are simply math, graphies, or widgets.
- * The translations for other items will be null, see @returns for details.
- *
- * @param {Array} items Objects that are passed to getEnglishStr which must
- *        return the English string to translate for that item.
- * @param {string} lang The ka_locale of the translated strings in
- *        translationPairs.
- * @param {Function} [getEnglishStr] A function that is passed one of the items
- *        and returns the English string to be translated.
- * @returns {Array} Pairs containing entries from items along with the
- *          accompanying translations.
+ * Provides suggestions for one or more strings from one or more groups of
+ * similar strings.
  */
-function autoTranslatePlaceholders(items, lang, getEnglishStr) {
-    return items.map(item => {
-        const englishStr = getEnglishStr(item);
-        const normalStr = normalizeString(englishStr);
+class TranslationAssistant {
+    /**
+     * Create a new TranslationAssistant instance.
+     *
+     * @param allItems - The items to be grouped and used to for generating
+     *     suggestions, see getSuggestionGroups.
+     * @param getEnglishStr - Function to extract English strings from items.
+     * @param getTranslation - Function to get a translated string for an item.
+     * @param lang - ka_locale, used for language specific translations, e.g.
+     *     in Portuguese, `\sin` should be `\operatorname\{sen\}`.
+     */
+    constructor(allItems, getEnglishStr, getTranslation, lang) {
+        this.getEnglishStr = getEnglishStr;
+        this.getTranslation = getTranslation;
+        this.suggestionGroups = this.getSuggestionGroups(allItems);
+        this.lang = lang;
+    }
 
-        if (/^(__MATH__|__GRAPHIE__|__WIDGET__)$/.test(normalStr)) {
-            let translatedStr = englishStr;
-            if (normalStr === '__MATH__') {
-                // ignore math that might contain natural language
-                if (englishStr.indexOf('\\text') !== -1) {
-                    return [englishStr, null];
+    /**
+     * Return an array of translation suggestions.
+     *
+     * Each item in the array is a couple with the first element being the item
+     * for which the translation was generated and the second being the
+     * translated string, e.g.
+     *  [
+     *      [
+     *          {
+     *              englishStr: 'foo',
+     *              jiptStr: 'crowdin:1:crowdin`
+     *          },
+     *          'foz'
+     *      ],
+     *      [
+     *          {
+     *              englishStr: 'bar',
+     *              jiptStr: 'crowdin:1:crowdin`
+     *          },
+     *          'baz'
+     *      ]
+     *  ]
+     *
+     * @param itemsToTranslate – same type of objects as the `allItems`
+     * argument that was passed to the constructor.
+     *
+     * Note: the items given in the example have `englishStr` and `jiptStr`
+     * properties, but they could have any shape as long as the `getEnglishStr`
+     * function that was passed to the constructor returns an English string
+     * when passed one of the items.
+     */
+    suggest(itemsToTranslate) {
+        const {suggestionGroups, lang} = this;
+
+        return itemsToTranslate.map(item => {
+            const englishStr = this.getEnglishStr(item);
+            const normalStr = normalizeString(englishStr);
+
+            // Translate items that are only math, a graphie, or a widget.
+            // TODO(kevinb) handle multiple non-nl_text items
+            if (/^(__MATH__|__GRAPHIE__|__WIDGET__)$/.test(normalStr)) {
+                if (normalStr === '__MATH__') {
+                    // Only translate the math if it doesn't include any
+                    // natural language text in a \text command.
+                    if (englishStr.indexOf('\\text') === -1) {
+                        return [item, translateMath(englishStr, lang)];
+                    }
+                } else {
+                    return [item, englishStr];
                 }
-                translatedStr = translateMath(translatedStr, lang);
             }
-            return [item, translatedStr];
-        } else {
+
+            if (suggestionGroups.hasOwnProperty(normalStr)) {
+                const {template} = suggestionGroups[normalStr];
+
+                // This error is probably due to math being different between
+                // the English string and the translated string.
+                if (template instanceof Error) {
+                    return [item, null];
+                }
+
+                if (template) {
+                    const translatedStr = populateTemplate(
+                        template, this.getEnglishStr(item), lang);
+                    return [item, translatedStr];
+                }
+            }
+
+            // The item doesn't belong in any of the suggestion groups.
             return [item, null];
-        }
-    });
-}
-
-/**
- * Returns the first valid English/translated pair.
- *
- * @param {Array} translationPairs An array of [englishStr, translatedStr]
- *        pairs, at least one should contain non empty, non-null strings.
- * @returns {Array|Error} An array containing an English/translated string
- *          pair.  It returns an Error if no pair exists.
- */
-function findTranslationPair(translationPairs) {
-    for (let i = 0; i < translationPairs.length; i++) {
-        const pair = translationPairs[i];
-        if (pair[0] && pair[1]) {
-            return pair;
-        }
-    }
-    return new Error('couldn\'t find translation pair');
-}
-
-/**
- * Returns an Array of suggested translations.
- *
- * @param {Array} translationPairs An array of [englishStr, translatedStr]
- *        pairs, at least one should contain non empty, non-null string.
- * @param {Array} items An array of objects that are passed to getEnglishStr
- *        which must return the English string to translate for that item.
- * @param {string} lang The ka_locale of the translated strings in
- *        translationPairs.
- * @param {Function} [getEnglishStr] A function that is passed one of the items
- *        and returns the English string to be translated.
- * @returns {Array|Error} An array of pairs containing entries from items
- *          along with the accompanying translations.
- */
-function suggest(translationPairs, items, lang, getEnglishStr = identity) {
-    const pair = findTranslationPair(translationPairs);
-    const groups = group(items, getEnglishStr);
-
-    if (pair instanceof Error || Object.keys(groups).length > 1) {
-        return autoTranslatePlaceholders(items, lang, getEnglishStr);
+        });
     }
 
-    const template = createTemplate(...pair, lang);
+    /**
+     * Group objects that contain English strings to translate.
+     *
+     * Groups are determined by the similarity between the English strings
+     * returned by `this.getEnglishStr` on each object in `items`.  In order to
+     * find more matches we ignore math, graphie, and widget substrings.
+     *
+     * Each group contains an array of items that belong in that group and a
+     * translation template if there was at least one item that had a
+     * translation.  Translations are determined by passing each item to
+     * `this.getTranslation`.
+     *
+     * Input:
+     * [
+     *    {
+     *        englishStr: "simplify $2/4$\n\nhint: the denominator is $2$",
+     *        id: 1001,
+     *    }, {
+     *        englishStr: "simplify $3/12$\n\nhint: the denominator is $4$",
+     *        id: 1002,
+     *    }
+     * ];
+     *
+     * Output:
+     * {
+     *    "simplify __MATH__\n\\nhint: denominator is __MATH__": {
+     *        items: [{
+     *            englishStr: "simplify $2/4$\n\nhint: the denominator is $2$",
+     *            id: 1001,
+     *        }, {
+     *            englishStr: "simplify $3/12$\n\nhint: the denominator is $4$",
+     *            id: 1002,
+     *        }],
+     *        template: { ... }
+     *    },
+     *    ...
+     * }
+     */
+    getSuggestionGroups(items) {
+        const suggestionGroups = {};
 
-    if (template instanceof Error) {
-        return template;
+        items.forEach(obj => {
+            var str = normalizeString(this.getEnglishStr(obj));
+
+            if (suggestionGroups[str]) {
+                suggestionGroups[str].push(obj);
+            } else {
+                suggestionGroups[str] = [obj];
+            }
+        });
+
+        Object.keys(suggestionGroups).forEach(key => {
+            const items = suggestionGroups[key];
+
+            for (const item of items) {
+                const englishStr = this.getEnglishStr(item);
+                const translatedStr = this.getTranslation(item);
+
+                if (translatedStr) {
+                    const template =
+                        createTemplate(englishStr, translatedStr, this.lang);
+                    suggestionGroups[key] = {items, template};
+                    return;
+                }
+            }
+            suggestionGroups[key] = {items, template: null};
+        });
+
+        return suggestionGroups;
     }
-
-    return items.map(item =>
-        [item, populateTemplate(template, getEnglishStr(item), lang)]);
 }
 
-module.exports = {
-    createTemplate,
-    populateTemplate,
-    group,
-    suggest,
-    normalizeString,
-};
+module.exports = TranslationAssistant;

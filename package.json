@@ -6,9 +6,9 @@
   "scripts": {
     "lint": "eslint src tests",
     "test": "mocha --compilers js:babel/register tests",
-    "build": "babel src/translation-assistant.js -o lib/translation-assistant.js",
+    "build": "babel --loose src/translation-assistant.js -o lib/translation-assistant.js",
     "watch_test": "mocha --watch --compilers js:babel/register tests",
-    "watch_build": "babel --watch src/translation-assistant.js -o lib/translation-assistant.js"
+    "watch_build": "babel --loose --watch src/translation-assistant.js -o lib/translation-assistant.js"
   },
   "repository": {
     "type": "git",

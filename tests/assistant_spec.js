@@ -1,26 +1,7 @@
 /*global describe, it*/
 
 const expect = require('expect.js');
-const { suggest, group } = require('../lib/translation-assistant');
-
-/**
- * Assert that the suggested translations match the translations.
- *
- * @param {Array} translationPairs An array of [englishStr, translatedStr]
- *        pairs.
- * @param {Array} englishStrs An array of English strings to translate.
- * @param {Array} translatedStrs An array of translated strings to test
- *        against.
- * @returns {void}
- */
-function assertSuggestions(translationPairs, englishStrs, translatedStrs) {
-    const suggestions =
-        suggest(translationPairs, englishStrs, 'fr');
-
-    for (let i = 0; i < translatedStrs.length; i++) {
-        expect(suggestions[i][1]).to.equal(translatedStrs[i]);
-    }
-}
+const TranslationAssistant = require('../lib/translation-assistant');
 
 /**
  * Return a fake graphie string.
@@ -32,232 +13,423 @@ function makeGraphie() {
     return `![](${baseURL}/${id})`;
 }
 
-describe('suggest', function() {
+const graphie1 = makeGraphie();
+const graphie2 = makeGraphie();
+const graphie3 = makeGraphie();
+const graphie4 = makeGraphie();
+const graphie5 = makeGraphie();
+const graphie6 = makeGraphie();
+
+const jiptStrings = {
+    'crowdin:0:crowdin': 'Ambas son impares',
+    'crowdin:1:crowdin': 'simplifyz $2x = 4$',
+    'crowdin:2:crowdin': 'simplifyz $2x = 4$',
+    'crowdin:3:crowdin': 'simplifyz $2x = 4$\n\nanswerz $x = 2$',
+    'crowdin:4:crowdin': 'simplifyz $2x = 4$, answerz $x = 2$',
+    'crowdin:5:crowdin':
+        'simplifyz $2x = 4$, answerz $x = 2$\n\nhintz: $x$ iznot $1$',
+    'crowdin:6:crowdin': 'answerz $x = 2$, simplifyz $2x = 4$',
+    'crowdin:7:crowdin': '**Al contar de $5$ en $5$ empezando en $18$, ' +
+        '¿cuáles números dirás? **',
+    'crowdin:8:crowdin': 'simplifyz $2x = 4$',
+    'crowdin:9:crowdin': '$\\operatorname{sen} \\theta$',
+    'crowdin:10:crowdin': `simplifyz ${graphie1}, answerz ${graphie2}\n\n` +
+        `hintz: ${graphie3}`,
+    'crowdin:11:crowdin': `answerz ${graphie2}, simplifyz ${graphie1}`,
+    'crowdin:12:crowdin': graphie1,
+    'crowdin:13:crowdin':
+        'simplifyz [[☃ Expression 1]], answerz [[☃ Expression 2]]\n\n' +
+        'hintz: [[☃ Expression 3]]',
+    'crowdin:14:crowdin':
+        'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]',
+    'crowdin:15:crowdin': '[[☃ Expression 1]]',
+};
+
+const getEnglishStr = item => item.englishStr;
+const getTranslation = item => jiptStrings[item.jiptStr];
+const lang = 'fr';
+
+/**
+ * Assert that the suggested translations match the translations.
+ */
+function assertSuggestions(allItems, itemsToTranslate, translatedStrs) {
+    const assistant =
+        new TranslationAssistant(allItems, getEnglishStr, getTranslation, lang);
+
+    const suggestions = assistant.suggest(itemsToTranslate);
+
+    for (let i = 0; i < translatedStrs.length; i++) {
+        expect(suggestions[i][1]).to.equal(translatedStrs[i]);
+    }
+}
+
+describe('Suggestor', function() {
     it('should handle no math', function() {
-        assertSuggestions(
-            [['Both are wrong', 'Ambas son impares']],
-            ['Both are wrong'],
-            ['Ambas son impares']
-        );
+        const allItems = [{
+            englishStr: 'Both are wrong',
+            jiptStr: 'crowdin:0:crowdin'
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'Both are wrong',
+            jiptStr: 'crowdin:0:crowdin'
+        }];
+        const translatedStrs = ['Ambas son impares'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle non-string items', function() {
-        let suggestions = suggest(
-            [['simplify $2x = 4$', 'simplifyz $2x = 4$']],
-            [{ englishStr: 'simplify $3x = 9$' }],
-            'fr',
-            item => item.englishStr
-        );
-        expect(suggestions[0][1]).to.equal('simplifyz $3x = 9$');
-        expect(suggestions[0][0].englishStr).to.equal('simplify $3x = 9$');
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$',
+            jiptStr: 'crowdin:1:crowdin'
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$',
+            jiptStr: 'crowdin:99:crowdin'
+        }];
+        const translatedStrs = [
+            'simplifyz $3x = 9$'
+        ];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
-    describe("invalid translation pairs", function() {
-        it('should return null when there\'s nl text', function() {
-            let suggestion = suggest(
-                [],
-                ['simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]'],
-                'fr',
-                str => str);
-            expect(suggestion[0][1]).to.equal(null);
+    it('should return null if there is no existing translation', function() {
+        const allItems = [];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$',
+            jiptStr: 'crowdin:99:crowdin'
+        }];
+        const translatedStrs = [];
 
-            suggestion = suggest(
-                [['simplify $2x = 4$\n\nx = [[\u2603 Expression 1]]', '']],
-                ['simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]'],
-                'fr',
-                str => str);
-            expect(suggestion[0][1]).to.equal(null);
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should handle having no items to translate', function() {
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$, answer $x = 2$',
+            jiptStr: 'crowdin:4:crowdin',
+        }];
+        const itemsToTranslate = [];
+        const translatedStrs = [];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should handle having no translations', function() {
+        const allItems = [{
+            englishStr: 'simplify $5x = 25$',
+            jiptStr: '',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $6x = 36$',
+            jiptStr: 'crowdin:99:crowdin'
+        }];
+        const translatedStrs = [];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it("can provide suggestions for multiple groups", function() {
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$, answer $x = 2$',
+            jiptStr: 'crowdin:4:crowdin',
+        }, {
+            englishStr: 'simplify $2x = 4$',
+            jiptStr: 'crowdin:8:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$, answer $x = 3$',
+            jiptStr: 'crowdin:99:crowdin',
+        }, {
+            englishStr: 'simplify $4x = 16$',
+            jiptStr: 'crowdin:98:crowdin'
+        }];
+        const translatedStrs = [
+            'simplifyz $3x = 9$, answerz $x = 3$',
+            'simplifyz $4x = 16$',
+        ];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    describe("no existing translations", function() {
+        it('should return null when there\'s nl text', function() {
+            const allItems = [];
+            const itemsToTranslate = [{
+                englishStr: 'simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]',
+                jiptStr: 'crowdin:99:crowdin',
+            }];
+            const translatedStrs = [null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
         });
 
         it('should return the same math', function() {
-            let suggestion = suggest([], ['$3x = 9$', 'hello']);
-            expect(suggestion[0][1]).to.equal('$3x = 9$');
-            expect(suggestion[1][1]).to.equal(null);
+            const allItems = [];
+            const itemsToTranslate = [
+                { englishStr: '$3x = 9$', jiptStr: 'crowdin:99:crowdin' },
+                { englishStr: 'hello', jiptStr: 'crowdin:99:crowdin' },
+            ];
+            const translatedStrs = ['$3x = 9$', null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
         });
 
         it('should return the same widget', function() {
-            let suggestion = suggest([], ['[[\u2603 Expression 1]]', 'hello']);
-            expect(suggestion[0][1]).to.equal('[[\u2603 Expression 1]]');
-            expect(suggestion[1][1]).to.equal(null);
+            const allItems = [];
+            const itemsToTranslate = [{
+                englishStr: '[[\u2603 Expression 1]]',
+                jiptStr: 'crowdin:99:crowdin',
+            }, {
+                englishStr: 'hello',
+                jiptStr: 'crowdin:99:crowdin',
+            }];
+            const translatedStrs = ['[[\u2603 Expression 1]]', null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
         });
 
         it('should return the same graphie', function() {
-            let graphie = makeGraphie();
-            let suggestion = suggest([], [graphie, 'hello']);
-            expect(suggestion[0][1]).to.equal(graphie);
-            expect(suggestion[1][1]).to.equal(null);
+            const graphie = makeGraphie();
+            const allItems = [];
+            const itemsToTranslate = [{
+                englishStr: graphie,
+                jiptStr: 'crowdin:99:crowdin',
+            }, {
+                englishStr: 'hello',
+                jiptStr: 'crowdin:99:crowdin',
+            }];
+            const translatedStr = [graphie, null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStr);
         });
     });
 });
 
-describe('suggest (math)', function() {
+describe('Suggestor (math)', function() {
     it('should populate a single line template with math', function() {
-        assertSuggestions(
-            [['simplify $2x = 4$', 'simplifyz $2x = 4$']],
-            ['simplify $3x = 9$'],
-            ['simplifyz $3x = 9$']
-        );
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$',
+            jiptStr: 'crowdin:2:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = ['simplifyz $3x = 9$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle math on multiple lines', function() {
-        assertSuggestions(
-            [['simplify $2x = 4$\n\nanswer $x = 2$',
-                'simplifyz $2x = 4$\n\nanswerz $x = 2$']],
-            ['simplify $3x = 9$\n\nanswer $x = 3$'],
-            ['simplifyz $3x = 9$\n\nanswerz $x = 3$']
-        );
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$\n\nanswer $x = 2$',
+            jiptStr: 'crowdin:3:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$\n\nanswer $x = 3$',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = ['simplifyz $3x = 9$\n\nanswerz $x = 3$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle multiple math on the same line', function() {
-        assertSuggestions(
-            [['simplify $2x = 4$, answer $x = 2$',
-                'simplifyz $2x = 4$, answerz $x = 2$']],
-            ['simplify $3x = 9$, answer $x = 3$'],
-            ['simplifyz $3x = 9$, answerz $x = 3$']
-        );
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$, answer $x = 2$',
+            jiptStr: 'crowdin:4:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$, answer $x = 3$',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = ['simplifyz $3x = 9$, answerz $x = 3$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle multiple math on multiple lines', function() {
-        assertSuggestions(
-            [['simplify $2x = 4$, answer $x = 2$\n\nhints: $x$ is not $1$',
-                'simplifyz $2x = 4$, answerz $x = 2$\n\nhintz: $x$ iznot $1$']],
-            ['simplify $3x = 9$, answer $x = 3$\n\nhints: $x$ is not $2$'],
-            ['simplifyz $3x = 9$, answerz $x = 3$\n\nhintz: $x$ iznot $2$']
-        );
+        const allItems = [{
+            englishStr:
+                'simplify $2x = 4$, answer $x = 2$\n\nhints: $x$ is not $1$',
+            jiptStr: 'crowdin:5:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr:
+                'simplify $3x = 9$, answer $x = 3$\n\nhints: $x$ is not $2$',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = [
+            'simplifyz $3x = 9$, answerz $x = 3$\n\nhintz: $x$ iznot $2$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle translations that re-order math', function() {
-        assertSuggestions(
-            [['simplify $2x = 4$, answer $x = 2$',
-                'answerz $x = 2$, simplifyz $2x = 4$']],
-            ['simplify $3x = 9$, answer $x = 3$'],
-            ['answerz $x = 3$, simplifyz $3x = 9$']
-        );
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$, answer $x = 2$',
+            jiptStr: 'crowdin:6:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$, answer $x = 3$',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = ['answerz $x = 3$, simplifyz $3x = 9$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should work when math chunks are reused', function() {
-        assertSuggestions(
-            [['**When counting by $5$s starting from $18$,  ' +
-            'which numbers will you say? **',
-                '**Al contar de $5$ en $5$ empezando en $18$, ' +
-                '¿cuáles números dirás? **']],
-            ['**When counting by $5$s starting from $18$,  ' +
-            'which numbers will you say? **'],
-            ['**Al contar de $5$ en $5$ empezando en $18$, ' +
-            '¿cuáles números dirás? **']
-        );
+        const allItems = [{
+            englishStr: '**When counting by $5$s starting from $18$,  ' +
+                'which numbers will you say? **',
+            jiptStr: 'crowdin:7:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: '**When counting by $5$s starting from $18$,  ' +
+                'which numbers will you say? **',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = [
+            '**Al contar de $5$ en $5$ empezando en $18$, ' +
+            '¿cuáles números dirás? **'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should translate multiple strings', function() {
-        assertSuggestions(
-            [['simplify $2x = 4$', 'simplifyz $2x = 4$']],
-            ['simplify $3x = 9$',
-                'simplify $4x = 16$'],
-            ['simplifyz $3x = 9$', 'simplifyz $4x = 16$']
-        );
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$',
+            jiptStr: 'crowdin:8:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$',
+            jiptStr: 'crowdin:99:crowdin',
+        }, {
+            englishStr: 'simplify $4x = 16$',
+            jiptStr: 'crowdin:98:crowdin'
+        }];
+        const translatedStrs = ['simplifyz $3x = 9$', 'simplifyz $4x = 16$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
-    it('should return an Error when the math doesn\'t match', function() {
-        const suggestion = suggest(
-            [['$\\sin \\theta$', '$\\operatorname{sen} \\theta$']],
-            ['$\\sin \\phi']);
-        expect(suggestion instanceof Error).to.be(true);
+    it('should return null when the math doesn\'t match', function() {
+        const allItems = [{
+            englishStr: '$\\sin \\theta$',
+            jiptStr: 'crowdin:9:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: '$\\sin \\phi',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = [null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 });
 
-describe('suggest (graphie)', function() {
+describe('Suggestor (graphie)', function() {
     it('should handle multiple math on multiple lines', function() {
-        const graphie1 = makeGraphie();
-        const graphie2 = makeGraphie();
-        const graphie3 = makeGraphie();
-        const graphie4 = makeGraphie();
-        const graphie5 = makeGraphie();
-        const graphie6 = makeGraphie();
+        const allItems = [{
+            englishStr: `simplify ${graphie1}, answer ${graphie2}\n\n` +
+                `hints: ${graphie3}`,
+            jiptStr: 'crowdin:10:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: `simplify ${graphie4}, answer ${graphie5}\n\n` +
+                `hints: ${graphie6}`,
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = [
+            `simplifyz ${graphie4}, answerz ${graphie5}\n\n` +
+            `hintz: ${graphie6}`];
 
-        assertSuggestions(
-            [[`simplify ${graphie1}, answer ${graphie2}\n\n` +
-            `hints: ${graphie3}`,
-                `simplifyz ${graphie1}, answerz ${graphie2}\n\n` +
-                `hintz: ${graphie3}`]],
-            [`simplify ${graphie4}, answer ${graphie5}\n\n` +
-            `hints: ${graphie6}`],
-            [`simplifyz ${graphie4}, answerz ${graphie5}\n\n` +
-            `hintz: ${graphie6}`]
-        );
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle translations that re-order graphies', function() {
-        const graphie1 = makeGraphie();
-        const graphie2 = makeGraphie();
-        const graphie3 = makeGraphie();
-        const graphie4 = makeGraphie();
+        const allItems = [{
+            englishStr: `simplify ${graphie1}, answer ${graphie2}`,
+            jiptStr: 'crowdin:11:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr: `simplify ${graphie3}, answer ${graphie4}`,
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = [`answerz ${graphie4}, simplifyz ${graphie3}`];
 
-        assertSuggestions(
-            [[`simplify ${graphie1}, answer ${graphie2}`,
-                `answerz ${graphie2}, simplifyz ${graphie1}`]],
-            [`simplify ${graphie3}, answer ${graphie4}`],
-            [`answerz ${graphie4}, simplifyz ${graphie3}`]
-        );
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle strings that are only graphies', function() {
-        const graphie1 = makeGraphie();
-        const graphie2 = makeGraphie();
+        const allItems = [{
+            englishStr: graphie1,
+            jiptStr: 'crowdin:12:crowdin'
+        }];
+        const itemsToTranslate = [{
+            englishStr: graphie2,
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = [graphie2];
 
-        assertSuggestions([[graphie1, graphie1]], [graphie2], [graphie2]);
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 });
 
-describe('suggest (widgets)', function() {
+describe('Suggestor (widgets)', function() {
     it('should handle multiple math on multiple lines', function() {
-        assertSuggestions(
-            [['simplify [[☃ Expression 1]], answer [[☃ Expression 2]]\n\n' +
-            'hints: [[☃ Expression 3]]',
-                'simplifyz [[☃ Expression 1]], answerz [[☃ Expression 2]]\n\n' +
-                'hintz: [[☃ Expression 3]]']],
-            ['simplify [[☃ Expression 1]], answer [[☃ Expression 2]]\n\n' +
-            'hints: [[☃ Expression 3]]'],
-            ['simplifyz [[☃ Expression 1]], answerz [[☃ Expression 2]]\n\n' +
-            'hintz: [[☃ Expression 3]]']
-        );
+        const allItems = [{
+            englishStr:
+                'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]\n\n' +
+                'hints: [[☃ Expression 3]]',
+            jiptStr: 'crowdin:13:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr:
+                'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]\n\n' +
+                'hints: [[☃ Expression 3]]',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = [
+            'simplifyz [[☃ Expression 1]], answerz [[☃ Expression 2]]\n\n' +
+            'hintz: [[☃ Expression 3]]'
+        ];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle translations that re-order widgets', function() {
-        assertSuggestions(
-            [['simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
-                'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]']],
-            ['simplify [[☃ Expression 1]], answer [[☃ Expression 2]]'],
-            ['answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]']
-        );
+        const allItems = [{
+            englishStr:
+                'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
+            jiptStr: 'crowdin:14:crowdin',
+        }];
+        const itemsToTranslate = [{
+            englishStr:
+                'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = [
+            'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]'
+        ];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle strings that are only widgets', function() {
-        assertSuggestions(
-            [['[[☃ Expression 1]]', '[[☃ Expression 1]]']],
-            ['[[☃ Expression 1]]'],
-            ['[[☃ Expression 1]]']
-        );
-    });
-});
+        const allItems = [{
+            englishStr: '[[☃ Expression 1]]',
+            jiptStr: 'crowdin:15:crowdin'
+        }];
+        const itemsToTranslate = [{
+            englishStr: '[[☃ Expression 1]]',
+            jiptStr: 'crowdin:99:crowdin',
+        }];
+        const translatedStrs = ['[[☃ Expression 1]]'];
 
-describe('group', function() {
-    it('should group strings', function() {
-        var groups = group(['simplify $8/4$', 'simplify $4/12$', 'find $x$']);
-        var groupKeys = Object.keys(groups);
-        expect(groupKeys.length).to.be(2);
-        expect(groupKeys).to.contain('simplify __MATH__');
-        expect(groupKeys).to.contain('find __MATH__');
-    });
-
-    it('should group objects', function() {
-        var groups = group([
-            {englishStr: 'simplify $8/4$'},
-            {englishStr: 'simplify $4/12$'},
-            {englishStr: 'find $x$'},
-        ], item => item.englishStr);
-        var groupKeys = Object.keys(groups);
-        expect(groupKeys.length).to.be(2);
-        expect(groupKeys).to.contain('simplify __MATH__');
-        expect(groupKeys).to.contain('find __MATH__');
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 });
