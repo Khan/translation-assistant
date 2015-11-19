@@ -1,7 +1,9 @@
 /*global describe, it*/
 
-const expect = require('expect.js');
+const assert = require('assert');
 const TranslationAssistant = require('../lib/translation-assistant');
+
+const {stringToGroupKey, createTemplate, populateTemplate} = TranslationAssistant;
 
 /**
  * Return a fake graphie string.
@@ -20,33 +22,8 @@ const graphie4 = makeGraphie();
 const graphie5 = makeGraphie();
 const graphie6 = makeGraphie();
 
-const jiptStrings = {
-    'crowdin:0:crowdin': 'Ambas son impares',
-    'crowdin:1:crowdin': 'simplifyz $2x = 4$',
-    'crowdin:2:crowdin': 'simplifyz $2x = 4$',
-    'crowdin:3:crowdin': 'simplifyz $2x = 4$\n\nanswerz $x = 2$',
-    'crowdin:4:crowdin': 'simplifyz $2x = 4$, answerz $x = 2$',
-    'crowdin:5:crowdin':
-        'simplifyz $2x = 4$, answerz $x = 2$\n\nhintz: $x$ iznot $1$',
-    'crowdin:6:crowdin': 'answerz $x = 2$, simplifyz $2x = 4$',
-    'crowdin:7:crowdin': '**Al contar de $5$ en $5$ empezando en $18$, ' +
-        '¿cuáles números dirás? **',
-    'crowdin:8:crowdin': 'simplifyz $2x = 4$',
-    'crowdin:9:crowdin': '$\\operatorname{sen} \\theta$',
-    'crowdin:10:crowdin': `simplifyz ${graphie1}, answerz ${graphie2}\n\n` +
-        `hintz: ${graphie3}`,
-    'crowdin:11:crowdin': `answerz ${graphie2}, simplifyz ${graphie1}`,
-    'crowdin:12:crowdin': graphie1,
-    'crowdin:13:crowdin':
-        'simplifyz [[☃ Expression 1]], answerz [[☃ Expression 2]]\n\n' +
-        'hintz: [[☃ Expression 3]]',
-    'crowdin:14:crowdin':
-        'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]',
-    'crowdin:15:crowdin': '[[☃ Expression 1]]',
-};
-
 const getEnglishStr = item => item.englishStr;
-const getTranslation = item => jiptStrings[item.jiptStr];
+const getTranslation = item => item.translatedStr;
 const lang = 'fr';
 
 /**
@@ -59,19 +36,19 @@ function assertSuggestions(allItems, itemsToTranslate, translatedStrs) {
     const suggestions = assistant.suggest(itemsToTranslate);
 
     for (let i = 0; i < translatedStrs.length; i++) {
-        expect(suggestions[i][1]).to.equal(translatedStrs[i]);
+        assert.equal(suggestions[i][1], translatedStrs[i]);
     }
 }
 
-describe('Suggestor', function() {
+describe('TranslationAssistant', function() {
     it('should handle no math', function() {
         const allItems = [{
             englishStr: 'Both are wrong',
-            jiptStr: 'crowdin:0:crowdin'
+            translatedStr: 'Ambas son impares'
         }];
         const itemsToTranslate = [{
             englishStr: 'Both are wrong',
-            jiptStr: 'crowdin:0:crowdin'
+            translatedStr: ''
         }];
         const translatedStrs = ['Ambas son impares'];
 
@@ -81,11 +58,11 @@ describe('Suggestor', function() {
     it('should handle non-string items', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$',
-            jiptStr: 'crowdin:1:crowdin'
+            translatedStr: 'simplifyz $2x = 4$'
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$',
-            jiptStr: 'crowdin:99:crowdin'
+            translatedStr: ''
         }];
         const translatedStrs = [
             'simplifyz $3x = 9$'
@@ -98,7 +75,7 @@ describe('Suggestor', function() {
         const allItems = [];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$',
-            jiptStr: 'crowdin:99:crowdin'
+            translatedStr: ''
         }];
         const translatedStrs = [];
 
@@ -108,7 +85,7 @@ describe('Suggestor', function() {
     it('should handle having no items to translate', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$, answer $x = 2$',
-            jiptStr: 'crowdin:4:crowdin',
+            translatedStr: 'simplifyz $2x = 4$, answerz $x = 2$',
         }];
         const itemsToTranslate = [];
         const translatedStrs = [];
@@ -119,11 +96,11 @@ describe('Suggestor', function() {
     it('should handle having no translations', function() {
         const allItems = [{
             englishStr: 'simplify $5x = 25$',
-            jiptStr: '',
+            translatedStr: '',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $6x = 36$',
-            jiptStr: 'crowdin:99:crowdin'
+            translatedStr: ''
         }];
         const translatedStrs = [];
 
@@ -133,17 +110,17 @@ describe('Suggestor', function() {
     it("can provide suggestions for multiple groups", function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$, answer $x = 2$',
-            jiptStr: 'crowdin:4:crowdin',
+            translatedStr: 'simplifyz $2x = 4$, answerz $x = 2$',
         }, {
             englishStr: 'simplify $2x = 4$',
-            jiptStr: 'crowdin:8:crowdin',
+            translatedStr: 'simplifyz $2x = 4$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$, answer $x = 3$',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }, {
             englishStr: 'simplify $4x = 16$',
-            jiptStr: 'crowdin:98:crowdin'
+            translatedStr: 'crowdin:98:crowdin'
         }];
         const translatedStrs = [
             'simplifyz $3x = 9$, answerz $x = 3$',
@@ -158,7 +135,7 @@ describe('Suggestor', function() {
             const allItems = [];
             const itemsToTranslate = [{
                 englishStr: 'simplify $3x = 9$\n\nx = [[\u2603 Expression 1]]',
-                jiptStr: 'crowdin:99:crowdin',
+                translatedStr: '',
             }];
             const translatedStrs = [null];
 
@@ -168,8 +145,8 @@ describe('Suggestor', function() {
         it('should return the same math', function() {
             const allItems = [];
             const itemsToTranslate = [
-                { englishStr: '$3x = 9$', jiptStr: 'crowdin:99:crowdin' },
-                { englishStr: 'hello', jiptStr: 'crowdin:99:crowdin' },
+                { englishStr: '$3x = 9$', translatedStr: '' },
+                { englishStr: 'hello', translatedStr: '' },
             ];
             const translatedStrs = ['$3x = 9$', null];
 
@@ -180,10 +157,10 @@ describe('Suggestor', function() {
             const allItems = [];
             const itemsToTranslate = [{
                 englishStr: '[[\u2603 Expression 1]]',
-                jiptStr: 'crowdin:99:crowdin',
+                translatedStr: '',
             }, {
                 englishStr: 'hello',
-                jiptStr: 'crowdin:99:crowdin',
+                translatedStr: '',
             }];
             const translatedStrs = ['[[\u2603 Expression 1]]', null];
 
@@ -195,10 +172,10 @@ describe('Suggestor', function() {
             const allItems = [];
             const itemsToTranslate = [{
                 englishStr: graphie,
-                jiptStr: 'crowdin:99:crowdin',
+                translatedStr: '',
             }, {
                 englishStr: 'hello',
-                jiptStr: 'crowdin:99:crowdin',
+                translatedStr: '',
             }];
             const translatedStr = [graphie, null];
 
@@ -207,15 +184,15 @@ describe('Suggestor', function() {
     });
 });
 
-describe('Suggestor (math)', function() {
+describe('TranslationAssistant (math)', function() {
     it('should populate a single line template with math', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$',
-            jiptStr: 'crowdin:2:crowdin',
+            translatedStr: 'simplifyz $2x = 4$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
         const translatedStrs = ['simplifyz $3x = 9$'];
 
@@ -225,11 +202,11 @@ describe('Suggestor (math)', function() {
     it('should handle math on multiple lines', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$\n\nanswer $x = 2$',
-            jiptStr: 'crowdin:3:crowdin',
+            translatedStr: 'simplifyz $2x = 4$\n\nanswerz $x = 2$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$\n\nanswer $x = 3$',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
         const translatedStrs = ['simplifyz $3x = 9$\n\nanswerz $x = 3$'];
 
@@ -239,11 +216,11 @@ describe('Suggestor (math)', function() {
     it('should handle multiple math on the same line', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$, answer $x = 2$',
-            jiptStr: 'crowdin:4:crowdin',
+            translatedStr: 'simplifyz $2x = 4$, answerz $x = 2$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$, answer $x = 3$',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
         const translatedStrs = ['simplifyz $3x = 9$, answerz $x = 3$'];
 
@@ -254,12 +231,13 @@ describe('Suggestor (math)', function() {
         const allItems = [{
             englishStr:
                 'simplify $2x = 4$, answer $x = 2$\n\nhints: $x$ is not $1$',
-            jiptStr: 'crowdin:5:crowdin',
+            translatedStr:
+                'simplifyz $2x = 4$, answerz $x = 2$\n\nhintz: $x$ iznot $1$',
         }];
         const itemsToTranslate = [{
             englishStr:
                 'simplify $3x = 9$, answer $x = 3$\n\nhints: $x$ is not $2$',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
         const translatedStrs = [
             'simplifyz $3x = 9$, answerz $x = 3$\n\nhintz: $x$ iznot $2$'];
@@ -270,11 +248,11 @@ describe('Suggestor (math)', function() {
     it('should handle translations that re-order math', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$, answer $x = 2$',
-            jiptStr: 'crowdin:6:crowdin',
+            translatedStr: 'answerz $x = 2$, simplifyz $2x = 4$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$, answer $x = 3$',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
         const translatedStrs = ['answerz $x = 3$, simplifyz $3x = 9$'];
 
@@ -285,12 +263,13 @@ describe('Suggestor (math)', function() {
         const allItems = [{
             englishStr: '**When counting by $5$s starting from $18$,  ' +
                 'which numbers will you say? **',
-            jiptStr: 'crowdin:7:crowdin',
+            translatedStr: '**Al contar de $5$ en $5$ empezando en $18$, ' +
+                '¿cuáles números dirás? **',
         }];
         const itemsToTranslate = [{
             englishStr: '**When counting by $5$s starting from $18$,  ' +
                 'which numbers will you say? **',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
         const translatedStrs = [
             '**Al contar de $5$ en $5$ empezando en $18$, ' +
@@ -302,14 +281,14 @@ describe('Suggestor (math)', function() {
     it('should translate multiple strings', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$',
-            jiptStr: 'crowdin:8:crowdin',
+            translatedStr: 'simplifyz $2x = 4$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }, {
             englishStr: 'simplify $4x = 16$',
-            jiptStr: 'crowdin:98:crowdin'
+            translatedStr: 'crowdin:98:crowdin'
         }];
         const translatedStrs = ['simplifyz $3x = 9$', 'simplifyz $4x = 16$'];
 
@@ -319,11 +298,11 @@ describe('Suggestor (math)', function() {
     it('should return null when the math doesn\'t match', function() {
         const allItems = [{
             englishStr: '$\\sin \\theta$',
-            jiptStr: 'crowdin:9:crowdin',
+            translatedStr: '$\\operatorname{sen} \\theta$',
         }];
         const itemsToTranslate = [{
             englishStr: '$\\sin \\phi',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
         const translatedStrs = [null];
 
@@ -331,105 +310,280 @@ describe('Suggestor (math)', function() {
     });
 });
 
-describe('Suggestor (graphie)', function() {
+describe('TranslationAssistant (graphie)', function() {
     it('should handle multiple math on multiple lines', function() {
         const allItems = [{
             englishStr: `simplify ${graphie1}, answer ${graphie2}\n\n` +
                 `hints: ${graphie3}`,
-            jiptStr: 'crowdin:10:crowdin',
+            translatedStr: `simplifyz ${graphie1}, answerz ${graphie2}\n\n` +
+                `hintz: ${graphie3}`,
         }];
         const itemsToTranslate = [{
             englishStr: `simplify ${graphie4}, answer ${graphie5}\n\n` +
                 `hints: ${graphie6}`,
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
-        const translatedStrs = [
-            `simplifyz ${graphie4}, answerz ${graphie5}\n\n` +
-            `hintz: ${graphie6}`];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        assertSuggestions(allItems, itemsToTranslate, [
+            `simplifyz ${graphie4}, answerz ${graphie5}\n\n` +
+            `hintz: ${graphie6}`
+        ]);
     });
 
     it('should handle translations that re-order graphies', function() {
         const allItems = [{
             englishStr: `simplify ${graphie1}, answer ${graphie2}`,
-            jiptStr: 'crowdin:11:crowdin',
+            translatedStr: `answerz ${graphie2}, simplifyz ${graphie1}`,
         }];
         const itemsToTranslate = [{
             englishStr: `simplify ${graphie3}, answer ${graphie4}`,
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
-        const translatedStrs = [`answerz ${graphie4}, simplifyz ${graphie3}`];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        assertSuggestions(allItems, itemsToTranslate, [
+            `answerz ${graphie4}, simplifyz ${graphie3}`
+        ]);
     });
 
     it('should handle strings that are only graphies', function() {
         const allItems = [{
             englishStr: graphie1,
-            jiptStr: 'crowdin:12:crowdin'
+            translatedStr: graphie1
         }];
         const itemsToTranslate = [{
             englishStr: graphie2,
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
-        const translatedStrs = [graphie2];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        assertSuggestions(allItems, itemsToTranslate, [graphie2]);
     });
 });
 
-describe('Suggestor (widgets)', function() {
+describe('TranslationAssistant (widgets)', function() {
     it('should handle multiple math on multiple lines', function() {
         const allItems = [{
             englishStr:
                 'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]\n\n' +
                 'hints: [[☃ Expression 3]]',
-            jiptStr: 'crowdin:13:crowdin',
+            translatedStr:
+                'simplifyz [[☃ Expression 1]], answerz [[☃ Expression 2]]\n\n' +
+                'hintz: [[☃ Expression 3]]',
         }];
         const itemsToTranslate = [{
             englishStr:
                 'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]\n\n' +
                 'hints: [[☃ Expression 3]]',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
-        const translatedStrs = [
+
+        assertSuggestions(allItems, itemsToTranslate, [
             'simplifyz [[☃ Expression 1]], answerz [[☃ Expression 2]]\n\n' +
             'hintz: [[☃ Expression 3]]'
-        ];
-
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        ]);
     });
 
     it('should handle translations that re-order widgets', function() {
         const allItems = [{
             englishStr:
                 'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
-            jiptStr: 'crowdin:14:crowdin',
+            translatedStr:
+                'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]',
         }];
         const itemsToTranslate = [{
             englishStr:
                 'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
-        const translatedStrs = [
-            'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]'
-        ];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        assertSuggestions(allItems, itemsToTranslate, [
+            'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]'
+        ]);
     });
 
     it('should handle strings that are only widgets', function() {
         const allItems = [{
             englishStr: '[[☃ Expression 1]]',
-            jiptStr: 'crowdin:15:crowdin'
+            translatedStr: '[[☃ Expression 1]]'
         }];
         const itemsToTranslate = [{
             englishStr: '[[☃ Expression 1]]',
-            jiptStr: 'crowdin:99:crowdin',
+            translatedStr: '',
         }];
-        const translatedStrs = ['[[☃ Expression 1]]'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        assertSuggestions(allItems, itemsToTranslate, ['[[☃ Expression 1]]']);
+    });
+});
+
+describe('TranslationAssistant (\\text{})', function() {
+    it('should handle a single \\text{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5$',
+            translatedStr: 'simplifyz $\\text{roja} = 5$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\text{red} = 20$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\text{roja} = 20$'
+        ]);
+    });
+
+    it('should handle multiple items with one per item \\text{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5$',
+            translatedStr: 'simplifyz $\\text{roja} = 5$',
+        }, {
+            englishStr: 'simplify $\\text{blue} = 10$',
+            translatedStr: 'simplifyz $\\text{azul} = 10$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\text{red} = 20$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $14 = \\text{blue} - 9$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\text{roja} = 20$',
+            'simplifyz $14 = \\text{azul} - 9$'
+        ]);
+    });
+
+    it('should handle an item with multiple \\text{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5 * \\text{blue}$',
+            translatedStr: 'simplifyz $\\text{azul} = 5 * \\text{roja}$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\text{red} = 20 - \\text{blue}$',
+            translatedStr: '',
+        }];
+
+        // Even though "red" in Spanish should be "roja", smart translations
+        // doesn't know that.  The template built from allItems will contain a
+        // mathDictionary which maps "red" to "azul" and "blue" to "roja".
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\text{azul} = 20 - \\text{roja}$'
+        ]);
+    });
+
+    it('should handle multiple items with multiple \\text{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5 * \\text{blue}$',
+            translatedStr: 'simplifyz $\\text{azul} = 5 * \\text{roja}$',
+        }, {
+            englishStr: 'simplify $\\text{red} + \\text{yellow} = 42$',
+            translatedStr: 'simplifyz $\\text{roja} + \\text{amarillo} = 42$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\text{red} = 20 - \\text{blue}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $x - \\text{yellow} = \\text{red}$',
+            translatedStr: '',
+        }];
+
+        // The group keys are different for the items in allItems.  The first
+        // is {str:"simplify __MATH__",texts:[["red","blue"]]}.  The second is
+        // {str:"simplify __MATH__",texts:[["red","yellow"]]}.  Because the
+        // group keys are different there ends up being two different groups,
+        // each with their own template with its own mathDictionary.  The first
+        // template translates \\text{red} to \\text{azul} while the second
+        // template translates \\text{red} to \\text{roja}.
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\text{azul} = 20 - \\text{roja}$',
+            'simplifyz $x - \\text{amarillo} = \\text{roja}$',
+        ]);
+    });
+
+    it('should not translate items with unknown text', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5$',
+            translatedStr: 'simplifyz $\\text{roja} = 5$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $\\text{blue}$',
+            translatedStr: '',
+        }];
+
+        const assistant = new TranslationAssistant(
+            allItems, getEnglishStr, getTranslation, lang);
+
+        const translation = assistant.suggest(itemsToTranslate);
+        assert.equal(translation[0][1], null);
+    });
+
+    it('should use the translation from the first item', function() {
+        const allItems = [{
+            englishStr: '$\\text{red} = 5$',
+            translatedStr: '$\\text{roja} = 5$',
+        }, {
+            englishStr: '$\\text{red} = 10$',
+            translatedStr: '$\\text{azul} = 10$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: '$\\text{red} = 15$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, ['$\\text{roja} = 15$']);
+    });
+});
+
+describe('normalizeString', function() {
+    it('should return a json string', function() {
+        assert.equal(
+            stringToGroupKey('simplify ${\\text{red} = 5$'),
+            '{"str":"simplify __MATH__","texts":[["red"]]}');
+
+        assert.equal(
+            stringToGroupKey('${\\text{red}, \\text{blue}$'),
+            '{"str":"__MATH__","texts":[["blue","red"]]}');
+
+        assert.equal(
+            stringToGroupKey('${\\text{red}$ and $\\text{blue}$'),
+            '{"str":"__MATH__ and __MATH__","texts":[["red"],["blue"]]}');
+
+        assert.equal(
+            stringToGroupKey('${\\text{red} + \\text{blue}$ and $1 + 2$'),
+            '{"str":"__MATH__ and __MATH__","texts":[["blue","red"],[]]}');
+    });
+});
+
+describe('populateTemplate where englishStr contains \\text{}', function() {
+    const englishStr = '$x = 1$, $\\text{red} = 5$, $\\text{yellow} = 10$, ' +
+        '$\\text{blue} = 10$';
+    const translatedStr = '$\\text{azul} = 10$, $x = 1$, ' +
+        '$\\text{amarillo} = 10$, $\\text{roja} = 5$, $x = 1$, ' +
+        '$\\text{azul} = 10$';
+    const lang = 'es';
+
+    let template;
+
+    beforeEach(function() {
+        template = createTemplate(englishStr, translatedStr, lang);
+    });
+
+    it('should translate the string used to create the template', function() {
+        const template = createTemplate(englishStr, translatedStr, lang);
+        const actual = populateTemplate(template, englishStr, lang);
+
+        assert.equal(actual, translatedStr);
+    });
+
+    it('should translate other similar strings', function() {
+        const template = createTemplate(englishStr, translatedStr, lang);
+
+        const newEnglishStr = '$x = 21$, $\\text{red} = 25$, ' +
+            '$\\text{yellow} = 210$, $\\text{blue} = 210$';
+        const newTranslatedStr =
+            populateTemplate(template, newEnglishStr, lang);
+
+        assert.equal(newTranslatedStr,
+            '$\\text{azul} = 210$, $x = 21$, $\\text{amarillo} = 210$, ' +
+            '$\\text{roja} = 25$, $x = 21$, $\\text{azul} = 210$');
     });
 });

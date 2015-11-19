@@ -16,6 +16,8 @@ const GRAPHIE_REGEX = /\!\[\]\([^)]+\)/g;
 // Matches widget strings, e.g. [[☃ Expression 1]]
 const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
+const TEXT_REGEX = /\\text{([^}]*)}/g;
+
 // Matches bold strings in markdown syntax, e.g. "This is **bold**"
 const BOLD_REGEX = /\*\*.*\*\*/g;
 
@@ -25,26 +27,59 @@ const LINE_BREAK = '\n\n';
 
 
 /**
- * Normalizes a string.  This is used when determining groups so that we don't
- * create groups based on non natural language text differences.
+ * Returns a key string for strings that should be in the same group.
  *
- * We replace math, graphies, and widgets with placehodlers and remove
- * unimportant whitespace differences on the item so that we can group
- * strings with similar natural language text.  We also disregard bold
- * markup when determining a match.  This means that translators may
- * have to add bold markkup to the suggestion in some cases.
+ * The key is used as a key for suggestionGroups.
  *
- * @param {string} str The string to normalize.
+ * The key string is a JSON string that looks like:
+ * '{str:"Is __MATH__ equal to __MATH__",texts:[["red", "blue"],[]]}'
+ *
+ * The `str` property is the `str` parameter with math, graphies, and widgets
+ * replaced with placeholders.  Also, we remove unimportant whitespace
+ * differences on the item so that we can group strings with similar natural
+ * language text.  We also disregard bold markup when determining a match.
+ * This means that translators may have to add bold markup to the suggestion
+ * in some cases.
+ *
+ * `texts` is an array of arrays. Each entry in the outer array corresponds to
+ * one `$` delineated formula in the original text. Each entry consists of all
+ * of the strings within `\text{}` blocks within its corresponding formula.
+ *
+ * The example output above could've been generated from the following string:
+ * "Is $\text{red} + \text{blue}$ equal to $7$?"
+ *
+ * @param {string} str The string to convert to a key.
  * @returns {string} The normalized string.
  */
-function normalizeString(str) {
-    return str.replace(MATH_REGEX, '__MATH__')
+function stringToGroupKey(str) {
+    const maths = str.match(MATH_REGEX) || [];
+
+    // This maps formula to an array which may contain 0 or more
+    // strings which were found inside the \text{} blocks
+    const texts = maths.map(math => {
+        const result = [];
+
+        allMatches(
+            math, /\\text{([^}]*)}/g, matches => result.push(matches[1]));
+
+        // The natural language text is sorted so that even if the formula is
+        // different and the natural language text is in a different order
+        // we'll end up with the same key.
+        result.sort();
+
+        return result;
+    });
+
+    str = str
+        .replace(MATH_REGEX, '__MATH__')
         .replace(GRAPHIE_REGEX, '__GRAPHIE__')
         .replace(WIDGET_REGEX, '__WIDGET__')
         .replace(/__MATH__[\t ]*__WIDGET__/g, '__MATH__ __WIDGET__')
         .replace(BOLD_REGEX,
             (match) => match.substring(2, match.length - 2))
         .split(LINE_BREAK).map((line) => line.trim()).join(LINE_BREAK);
+
+    return JSON.stringify({ str, texts });
 }
 
 /**
@@ -62,9 +97,9 @@ function normalizeString(str) {
  * // mapping = [1,1,0];
  *
  * This mapping array indicates that the first two __MATH__ placeholders in the
- * translated string template should be replaced with the second math block
+ * translated string template should be replaced with the second formula
  * from the English string we're translating.  The third __MATH__ placeholder
- * should be replaced by the first math block from the English string we're
+ * should be replaced by the first formula from the English string we're
  * translating.
  *
  * @param {String} englishStr The English source string.
@@ -72,16 +107,34 @@ function normalizeString(str) {
  * @param {String} lang ka_locale of translatedStr.
  * @param {RegExp} findRegex A regex that matches math, graphies, or widgets.
  *        Use one of MATH_REGEX, GRAPHIE_REGEX, or WIDGET_REGEX.
+ * @param {Object} [mathDictionary] English to translated string mapping for
+ *        for strings inside \text{} blocks.
  * @returns {Array} An array representing the mapping.
  */
-function getMapping(englishStr, translatedStr, lang, findRegex) {
-    const inputs = englishStr.match(findRegex) || [];
-    const outputs = translatedStr.match(findRegex) || [];
+// TODO(kevinb): change mathDictionary to mathDictionaries
+function getMapping(englishStr, translatedStr, lang, findRegex, mathDictionary) {
+    let inputs = englishStr.match(findRegex) || [];
+    let outputs = translatedStr.match(findRegex) || [];
+
+    if (findRegex === MATH_REGEX) {
+        inputs = inputs.map(input => {
+            let result = input;
+            for (const [englishText, translatedText] of Object.entries(mathDictionary)) {
+                var regex = new RegExp(`\\\\text{${englishText}}`, 'g');
+                var replacement = `\\text{${translatedText}}`;
+                result = result.replace(regex, replacement);
+            }
+            return result;
+        });
+    }
 
     const mapping = [];
 
     outputs.forEach((output, outputIndex) => {
-        output = translateMath(output, lang);
+        if (findRegex === MATH_REGEX) {
+            output = translateMath(output, lang);
+        }
+
         const inputIndex = inputs.indexOf(output);
         if (inputIndex === -1) {
             if (findRegex === MATH_REGEX) {
@@ -102,6 +155,103 @@ function getMapping(englishStr, translatedStr, lang, findRegex) {
 }
 
 /**
+ * Helper for getting all subgroup matches from a string.  The callback is
+ * passed the matches array for each match in `text`.
+ */
+function allMatches(text, regex, callback) {
+    let matches = regex.exec(text);
+    while (matches != null) {
+        callback(matches);
+        matches = regex.exec(text);
+    }
+}
+
+/**
+ * Returns a dictionary with English strings within \text{} blocks map to
+ * translated strings within \text{} blocks.
+ *
+ * This becomes part of the template and is used by populateTemplate to
+ * automatically translate any natural language text contained with \text{}
+ * blocks.
+ *
+ * The following call:
+ * getMathDictionary(
+ *     "$\text{red}$, $\text{blue} + \text{yellow}",
+ *     "$\text{roja}$, $\text{azul} + \text{amarillo}"
+ * );
+ *
+ * will return the following output:
+ * {
+ *     "red": "roja",
+ *     "blue": "azul",
+ *     "yellow": "amarillo"
+ * }
+ */
+// TODO(kevinb): automatically handle \text{} blocks containing numbers only
+function getMathDictionary(englishStr, translatedStr) {
+    let inputs = englishStr.match(MATH_REGEX) || [];
+    let outputs = translatedStr.match(MATH_REGEX) || [];
+
+    const inputMap = {};
+    const outputMap = {};
+
+    inputs.forEach(input => {
+        const normalized = input.replace(TEXT_REGEX, '__TEXT__');
+        if (!inputMap[normalized]) {
+            inputMap[normalized] = [];
+        }
+        inputMap[normalized].push(input);
+    });
+
+    outputs.forEach(output => {
+        const normalized = output.replace(TEXT_REGEX, '__TEXT__');
+        if (!outputMap[normalized]) {
+            outputMap[normalized] = [];
+        }
+        outputMap[normalized].push(output);
+    });
+
+    const dict = {};
+    Object.keys(inputMap).forEach(key => {
+        if (/__TEXT__/.test(key)) {
+            const input = inputMap[key];
+
+            if (!outputMap.hasOwnProperty(key)) {
+                // If outputMap is missing a key that exists in inputMap it
+                // means that the math differs between the input and output
+                // and getMapping will throw and error in that case.
+                return;
+            }
+            const output = outputMap[key];
+
+            // Compute the set of all natural language text within \text{}
+            // blocks from the current English formula.
+            const inputTexts = {};
+            allMatches(input, /\\text{([^}]*)}/g,
+                matches => inputTexts[matches[1]] = true);
+
+            // Compute the set of all natural language text within \text{}
+            // blocks from the current translated formula.
+            const outputTexts = {};
+            allMatches(output, /\\text{([^}]*)}/g,
+                matches => outputTexts[matches[1]] = true);
+
+            const inputKeys = Object.keys(inputTexts);
+            const outputKeys = Object.keys(outputTexts);
+
+            // We assume that the order of \text{} blocks will not change
+            // within a math formula being translated.
+            for (let i = 0; i < inputKeys.length; i++) {
+                dict[inputKeys[i]] = outputKeys[i];
+            }
+        }
+    });
+
+    // contains the math dictionary
+    return dict;
+}
+
+/**
  * Creates a template object based on englishStr and translatedStr strings.
  *
  * All math, graphie, and widget sub-strings are replaced by placeholders and
@@ -119,6 +269,8 @@ function getMapping(englishStr, translatedStr, lang, findRegex) {
  */
 function createTemplate(englishStr, translatedStr, lang) {
     const translatedLines = translatedStr.split(LINE_BREAK);
+    const mathDictionary = getMathDictionary(englishStr, translatedStr);
+
     try {
         return {
             lines: translatedLines.map(
@@ -126,11 +278,12 @@ function createTemplate(englishStr, translatedStr, lang) {
                     .replace(GRAPHIE_REGEX, '__GRAPHIE__')
                     .replace(WIDGET_REGEX, '__WIDGET__')),
             mathMapping:
-                getMapping(englishStr, translatedStr, lang, MATH_REGEX),
+                getMapping(englishStr, translatedStr, lang, MATH_REGEX, mathDictionary),
             graphieMapping:
                 getMapping(englishStr, translatedStr, lang, GRAPHIE_REGEX),
             widgetMapping:
                 getMapping(englishStr, translatedStr, lang, WIDGET_REGEX),
+            mathDictionary: mathDictionary
         };
     } catch(e) {
         return e;
@@ -173,7 +326,18 @@ function populateTemplate(template, englishStr, lang) {
     let graphieIndex = 0;
     let widgetIndex = 0;
 
-    maths = maths.map(math => translateMath(math, lang));
+    maths = maths.map(math => {
+        var result = translateMath(math, lang);
+        var dict = template.mathDictionary;
+
+        for (const [englishText, translatedText] of Object.entries(dict)) {
+            var regex = new RegExp(`\\\\text{${englishText}}`, 'g');
+            var replacement = `\\text{${translatedText}}`;
+            result = result.replace(regex, replacement);
+        }
+
+        return result;
+    });
 
     return englishLines.map((englishLine, index) => {
         const templateLine = template.lines[index];
@@ -246,12 +410,13 @@ class TranslationAssistant {
 
         return itemsToTranslate.map(item => {
             const englishStr = this.getEnglishStr(item);
-            const normalStr = normalizeString(englishStr);
+            const normalStr = stringToGroupKey(englishStr);
+            const normalObj = JSON.parse(normalStr);
 
             // Translate items that are only math, a graphie, or a widget.
             // TODO(kevinb) handle multiple non-nl_text items
-            if (/^(__MATH__|__GRAPHIE__|__WIDGET__)$/.test(normalStr)) {
-                if (normalStr === '__MATH__') {
+            if (/^(__MATH__|__GRAPHIE__|__WIDGET__)$/.test(normalObj.str)) {
+                if (normalObj.str === '__MATH__') {
                     // Only translate the math if it doesn't include any
                     // natural language text in a \text command.
                     if (englishStr.indexOf('\\text') === -1) {
@@ -298,22 +463,22 @@ class TranslationAssistant {
      * Input:
      * [
      *    {
-     *        englishStr: "simplify $2/4$\n\nhint: the denominator is $2$",
+     *        englishStr: "simplify $2/4$",
      *        id: 1001,
      *    }, {
-     *        englishStr: "simplify $3/12$\n\nhint: the denominator is $4$",
+     *        englishStr: "simplify $3/12$",
      *        id: 1002,
      *    }
      * ];
      *
      * Output:
      * {
-     *    "simplify __MATH__\n\\nhint: denominator is __MATH__": {
+     *    '{str:"simplify __MATH__",text:[[]]}': {
      *        items: [{
-     *            englishStr: "simplify $2/4$\n\nhint: the denominator is $2$",
+     *            englishStr: "simplify $2/4$",
      *            id: 1001,
      *        }, {
-     *            englishStr: "simplify $3/12$\n\nhint: the denominator is $4$",
+     *            englishStr: "simplify $3/12$",
      *            id: 1002,
      *        }],
      *        template: { ... }
@@ -325,12 +490,12 @@ class TranslationAssistant {
         const suggestionGroups = {};
 
         items.forEach(obj => {
-            var str = normalizeString(this.getEnglishStr(obj));
+            var key = stringToGroupKey(this.getEnglishStr(obj));
 
-            if (suggestionGroups[str]) {
-                suggestionGroups[str].push(obj);
+            if (suggestionGroups[key]) {
+                suggestionGroups[key].push(obj);
             } else {
-                suggestionGroups[str] = [obj];
+                suggestionGroups[key] = [obj];
             }
         });
 
@@ -354,5 +519,9 @@ class TranslationAssistant {
         return suggestionGroups;
     }
 }
+
+TranslationAssistant.stringToGroupKey = stringToGroupKey;
+TranslationAssistant.createTemplate = createTemplate;
+TranslationAssistant.populateTemplate = populateTemplate;
 
 module.exports = TranslationAssistant;

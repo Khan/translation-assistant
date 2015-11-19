@@ -1,5 +1,6 @@
 {
     "project_id": "intelligent-tm",
     "conduit_uri": "https://phabricator.khanacademy.org/",
-    "lint.engine": "ArcanistConfigurationDrivenLintEngine"
+    "lint.engine": "ArcanistConfigurationDrivenLintEngine",
+    "differential.generated-paths": "./lib/*"
 }
