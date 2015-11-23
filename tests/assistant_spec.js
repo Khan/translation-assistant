@@ -533,6 +533,43 @@ describe('TranslationAssistant (\\text{})', function() {
     });
 });
 
+describe('TranslationAssistant **bold**', function() {
+    it('should group bold and non-bold text separately', function() {
+        const allItems = [{
+            englishStr: '**Solve** $2x = 5$',
+            translatedStr: '**Solvez** $2x = 5$',
+        }, {
+            englishStr: 'Solve $3x = 9$',
+            translatedStr: 'Solvez $3x = 9$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: '**Solve** $4x = 16$',
+            translatedStr: '',
+        }, {
+            englishStr: 'Solve $2x - 5 = 10$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            '**Solvez** $4x = 16$',
+            'Solvez $2x - 5 = 10$'
+        ]);
+    });
+
+    it('should not translate non-bold from bold', function () {
+        const allItems = [{
+            englishStr: '**Solve** $2x = 5$',
+            translatedStr: '**Solvez** $2x = 5$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'Solve $2x - 5 = 10$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [null]);
+    });
+});
+
 describe('normalizeString', function() {
     it('should return a json string', function() {
         assert.equal(

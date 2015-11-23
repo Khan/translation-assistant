@@ -18,9 +18,6 @@ const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
 const TEXT_REGEX = /\\text{([^}]*)}/g;
 
-// Matches bold strings in markdown syntax, e.g. "This is **bold**"
-const BOLD_REGEX = /\*\*.*\*\*/g;
-
 // Use two line feeds to split lines because this is how Markdown delineates
 // paragraphs.
 const LINE_BREAK = '\n\n';
@@ -75,8 +72,6 @@ function stringToGroupKey(str) {
         .replace(GRAPHIE_REGEX, '__GRAPHIE__')
         .replace(WIDGET_REGEX, '__WIDGET__')
         .replace(/__MATH__[\t ]*__WIDGET__/g, '__MATH__ __WIDGET__')
-        .replace(BOLD_REGEX,
-            (match) => match.substring(2, match.length - 2))
         .split(LINE_BREAK).map((line) => line.trim()).join(LINE_BREAK);
 
     return JSON.stringify({ str, texts });
