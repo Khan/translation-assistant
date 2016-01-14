@@ -245,6 +245,21 @@ describe('TranslationAssistant (math)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
+    it('should handle trailing newline mismatches', function() {
+        assertSuggestions([{
+            englishStr:
+                'simplify $2x = 4$, answer $x = 2$\n\n',
+            translatedStr:
+                'simplifyz $2x = 4$, answerz $x = 2$',
+        }], [{
+            englishStr:
+                'simplify $3x = 9$, answer $x = 3$\n\n',
+            translatedStr: '',
+        }], [
+            'simplifyz $3x = 9$, answerz $x = 3$'
+        ]);
+    });
+
     it('should handle translations that re-order math', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$, answer $x = 2$',

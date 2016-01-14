@@ -294,6 +294,10 @@ function translateMath(math, lang) {
     }
 }
 
+function rtrim(str) {
+    return str.replace(/\s+$/g, '');
+}
+
 /**
  * Translate the text inside \\text{} blocks.
  *
@@ -324,6 +328,7 @@ function replaceTextInMath(englishMath, dict) {
  * @returns {string} The suggested translation.
  */
 function populateTemplate(template, englishStr, lang) {
+    englishStr = rtrim(englishStr);
     const englishLines = englishStr.split(LINE_BREAK);
 
     let maths = englishStr.match(MATH_REGEX) || [];
