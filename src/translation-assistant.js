@@ -16,7 +16,7 @@ const GRAPHIE_REGEX = /\!\[\]\([^)]+\)/g;
 // Matches widget strings, e.g. [[☃ Expression 1]]
 const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
-const TEXT_REGEX = /\\text{([^}]*)}/g;
+const TEXT_REGEX = /\\text\s*{([^}]*)}/g;
 
 // Use two line feeds to split lines because this is how Markdown delineates
 // paragraphs.
@@ -112,15 +112,7 @@ function getMapping(englishStr, translatedStr, lang, findRegex, mathDictionary) 
     let outputs = translatedStr.match(findRegex) || [];
 
     if (findRegex === MATH_REGEX) {
-        inputs = inputs.map(input => {
-            let result = input;
-            for (const [englishText, translatedText] of Object.entries(mathDictionary)) {
-                var regex = new RegExp(`\\\\text{${englishText}}`, 'g');
-                var replacement = `\\text{${translatedText}}`;
-                result = result.replace(regex, replacement);
-            }
-            return result;
-        });
+        inputs = inputs.map(input => replaceTextInMath(input, mathDictionary));
     }
 
     const mapping = [];
@@ -222,13 +214,13 @@ function getMathDictionary(englishStr, translatedStr) {
             // Compute the set of all natural language text within \text{}
             // blocks from the current English formula.
             const inputTexts = {};
-            allMatches(input, /\\text{([^}]*)}/g,
+            allMatches(input, /\\text\s*{([^}]*)}/g,
                 matches => inputTexts[matches[1]] = true);
 
             // Compute the set of all natural language text within \text{}
             // blocks from the current translated formula.
             const outputTexts = {};
-            allMatches(output, /\\text{([^}]*)}/g,
+            allMatches(output, /\\text\s*{([^}]*)}/g,
                 matches => outputTexts[matches[1]] = true);
 
             const inputKeys = Object.keys(inputTexts);
@@ -303,6 +295,27 @@ function translateMath(math, lang) {
 }
 
 /**
+ * Translate the text inside \\text{} blocks.
+ *
+ * @param {string} englishMath The math string to translate.  If a English
+ *      string from CrowdIn is "Solve $3\\text{nickles} = x\\text{pennies}$"
+ *      then englishMath would be "3\\text{nickles} = x\\text{pennies}"
+ * @param {Object} dict A mapping from english words to translated words that
+ *      appear inside \\text{} blocks.
+ * @returns {string} translated math.
+ */
+function replaceTextInMath(englishMath, dict) {
+    let translatedMath = englishMath;
+    for (const [englishText, translatedText] of Object.entries(dict)) {
+        const regex = new RegExp(`\\\\text(\\s*){${englishText}}`, 'g');
+        // make sure the spacing matches in the replacement
+        const replacement = `\\text$1{${translatedText}}`;
+        translatedMath = translatedMath.replace(regex, replacement);
+    }
+    return translatedMath;
+}
+
+/**
  * Returns a translations suggestion based the given template and englishStr.
  *
  * @param {Object} template A template object return by createTemplate.
@@ -323,15 +336,7 @@ function populateTemplate(template, englishStr, lang) {
 
     maths = maths.map(math => {
         var result = translateMath(math, lang);
-        var dict = template.mathDictionary;
-
-        for (const [englishText, translatedText] of Object.entries(dict)) {
-            var regex = new RegExp(`\\\\text{${englishText}}`, 'g');
-            var replacement = `\\text{${translatedText}}`;
-            result = result.replace(regex, replacement);
-        }
-
-        return result;
+        return replaceTextInMath(result, template.mathDictionary);
     });
 
     return englishLines.map((englishLine, index) => {

@@ -531,6 +531,16 @@ describe('TranslationAssistant (\\text{})', function() {
 
         assertSuggestions(allItems, itemsToTranslate, ['$\\text{roja} = 15$']);
     });
+
+    it('should work with spaces between \\text and {', function() {
+        assertSuggestions([{
+            englishStr: '$\\text{Area}} = 6 \\text { square cm}$',
+            translatedStr: '$\\text{Fläche}} = 6 \\text { Quadratzentimeter}$'
+        }], [{
+            englishStr: '$\\text{Area}} = 12 \\text { square cm}$',
+            translated: ''
+        }], ['$\\text{Fläche}} = 12 \\text { Quadratzentimeter}$']);
+    });
 });
 
 describe('TranslationAssistant **bold**', function() {
