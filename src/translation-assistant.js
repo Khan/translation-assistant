@@ -331,6 +331,12 @@ function populateTemplate(template, englishStr, lang) {
     englishStr = rtrim(englishStr);
     const englishLines = englishStr.split(LINE_BREAK);
 
+    if (template.length != englishLines.length) {
+        //The translation modified some new lines.  Let's just throw this out
+        //as we won't be able to give a good suggestion.
+        return;
+    }
+
     let maths = englishStr.match(MATH_REGEX) || [];
     const graphies = englishStr.match(GRAPHIE_REGEX) || [];
     const widgets = englishStr.match(WIDGET_REGEX) || [];
