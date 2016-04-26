@@ -331,7 +331,7 @@ function populateTemplate(template, englishStr, lang) {
     englishStr = rtrim(englishStr);
     const englishLines = englishStr.split(LINE_BREAK);
 
-    if (template.length != englishLines.length) {
+    if (template.lines.length != englishLines.length) {
         //The translation modified some new lines.  Let's just throw this out
         //as we won't be able to give a good suggestion.
         return;
