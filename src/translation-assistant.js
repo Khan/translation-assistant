@@ -16,7 +16,10 @@ const GRAPHIE_REGEX = /\!\[\]\([^)]+\)/g;
 // Matches widget strings, e.g. [[☃ Expression 1]]
 const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
+// TODO(michaelpolyak): Add support for other \text commands:
+// https://github.com/Khan/KaTeX/blob/3280652bd68973ad9edd73273137049324c5cab9/src/functions.js#L50
 const TEXT_REGEX = /\\text\s*{([^}]*)}/g;
+const TEXTBF_REGEX = /\\textbf\s*{([^}]*)}/g;
 
 // Use two line feeds to split lines because this is how Markdown delineates
 // paragraphs.
@@ -40,10 +43,11 @@ const LINE_BREAK = '\n\n';
  *
  * `texts` is an array of arrays. Each entry in the outer array corresponds to
  * one `$` delineated formula in the original text. Each entry consists of all
- * of the strings within `\text{}` blocks within its corresponding formula.
+ * of the strings within `\text{}` and `\textbf{}` blocks within its
+ * corresponding formula.
  *
  * The example output above could've been generated from the following string:
- * "Is $\text{red} + \text{blue}$ equal to $7$?"
+ * "Is $\text{red} + \textbf{blue}$ equal to $7$?"
  *
  * @param {string} str The string to convert to a key.
  * @returns {string} The normalized string.
@@ -52,12 +56,12 @@ function stringToGroupKey(str) {
     const maths = str.match(MATH_REGEX) || [];
 
     // This maps formula to an array which may contain 0 or more
-    // strings which were found inside the \text{} blocks
+    // strings which were found inside the \text{} and \textbf{} blocks
     const texts = maths.map(math => {
         const result = [];
 
-        allMatches(
-            math, /\\text{([^}]*)}/g, matches => result.push(matches[1]));
+        allMatches(math, /\\text(?:bf)?{([^}]*)}/g,
+            matches => result.push(matches[1]));
 
         // The natural language text is sorted so that even if the formula is
         // different and the natural language text is in a different order
@@ -103,7 +107,7 @@ function stringToGroupKey(str) {
  * @param {RegExp} findRegex A regex that matches math, graphies, or widgets.
  *        Use one of MATH_REGEX, GRAPHIE_REGEX, or WIDGET_REGEX.
  * @param {Object} [mathDictionary] English to translated string mapping for
- *        for strings inside \text{} blocks.
+ *        for strings inside \text{} and \textbf{} blocks.
  * @returns {Array} An array representing the mapping.
  */
 // TODO(kevinb): change mathDictionary to mathDictionaries
@@ -154,17 +158,17 @@ function allMatches(text, regex, callback) {
 }
 
 /**
- * Returns a dictionary with English strings within \text{} blocks map to
- * translated strings within \text{} blocks.
+ * Returns a dictionary with English strings within \text{} and \textbf{} blocks
+ * map to translated strings within \text{} and \textbf{} blocks.
  *
  * This becomes part of the template and is used by populateTemplate to
- * automatically translate any natural language text contained with \text{}
- * blocks.
+ * automatically translate any natural language text contained with \text{} and
+ * \textbf{} blocks.
  *
  * The following call:
  * getMathDictionary(
- *     "$\text{red}$, $\text{blue} + \text{yellow}",
- *     "$\text{roja}$, $\text{azul} + \text{amarillo}"
+ *     "$\\text{red}$, $\\textbf{blue} + \\text{yellow}$",
+ *     "$\\text{roja}$, $\\textbf{azul} + \\text{amarillo}$"
  * );
  *
  * will return the following output:
@@ -182,8 +186,18 @@ function getMathDictionary(englishStr, translatedStr) {
     const inputMap = {};
     const outputMap = {};
 
+    const replaceRegexes = [
+        [TEXT_REGEX, '__TEXT__'],
+        [TEXTBF_REGEX, '__TEXTBF__'],
+    ];
+
     inputs.forEach(input => {
-        const normalized = input.replace(TEXT_REGEX, '__TEXT__');
+        let normalized = input;
+
+        replaceRegexes.forEach(([regex, str]) => {
+            normalized = normalized.replace(regex, str);
+        });
+
         if (!inputMap[normalized]) {
             inputMap[normalized] = [];
         }
@@ -191,7 +205,12 @@ function getMathDictionary(englishStr, translatedStr) {
     });
 
     outputs.forEach(output => {
-        const normalized = output.replace(TEXT_REGEX, '__TEXT__');
+        let normalized = output;
+
+        replaceRegexes.forEach(([regex, str]) => {
+            normalized = normalized.replace(regex, str);
+        });
+
         if (!outputMap[normalized]) {
             outputMap[normalized] = [];
         }
@@ -199,39 +218,47 @@ function getMathDictionary(englishStr, translatedStr) {
     });
 
     const dict = {};
+
+    const matchRegexes = [
+        [/__TEXT__/, TEXT_REGEX],
+        [/__TEXTBF__/, TEXTBF_REGEX],
+    ];
+
     Object.keys(inputMap).forEach(key => {
-        if (/__TEXT__/.test(key)) {
-            const input = inputMap[key];
+        matchRegexes.forEach(([match, regex]) => {
+            if (match.test(key)) {
+                const input = inputMap[key];
 
-            if (!outputMap.hasOwnProperty(key)) {
-                // If outputMap is missing a key that exists in inputMap it
-                // means that the math differs between the input and output
-                // and getMapping will throw and error in that case.
-                return;
+                if (!outputMap.hasOwnProperty(key)) {
+                    // If outputMap is missing a key that exists in inputMap it
+                    // means that the math differs between the input and output
+                    // and getMapping will throw and error in that case.
+                    return;
+                }
+                const output = outputMap[key];
+
+                // Compute the set of all natural language text within \text{}
+                // and \textbf{} blocks from the current English formula.
+                const inputTexts = {};
+                allMatches(input, regex,
+                    matches => inputTexts[matches[1]] = true);
+
+                // Compute the set of all natural language text within \text{}
+                // and \textbf{} blocks from the current translated formula.
+                const outputTexts = {};
+                allMatches(output, regex,
+                    matches => outputTexts[matches[1]] = true);
+
+                const inputKeys = Object.keys(inputTexts);
+                const outputKeys = Object.keys(outputTexts);
+
+                // We assume that the order of \text{} and \textbf{} blocks will
+                // not change within a math formula being translated.
+                for (let i = 0; i < inputKeys.length; i++) {
+                    dict[inputKeys[i]] = outputKeys[i];
+                }
             }
-            const output = outputMap[key];
-
-            // Compute the set of all natural language text within \text{}
-            // blocks from the current English formula.
-            const inputTexts = {};
-            allMatches(input, /\\text\s*{([^}]*)}/g,
-                matches => inputTexts[matches[1]] = true);
-
-            // Compute the set of all natural language text within \text{}
-            // blocks from the current translated formula.
-            const outputTexts = {};
-            allMatches(output, /\\text\s*{([^}]*)}/g,
-                matches => outputTexts[matches[1]] = true);
-
-            const inputKeys = Object.keys(inputTexts);
-            const outputKeys = Object.keys(outputTexts);
-
-            // We assume that the order of \text{} blocks will not change
-            // within a math formula being translated.
-            for (let i = 0; i < inputKeys.length; i++) {
-                dict[inputKeys[i]] = outputKeys[i];
-            }
-        }
+        });
     });
 
     // contains the math dictionary
@@ -299,22 +326,30 @@ function rtrim(str) {
 }
 
 /**
- * Translate the text inside \\text{} blocks.
+ * Translate the text inside \\text{} and \\textbf blocks.
  *
  * @param {string} englishMath The math string to translate.  If a English
- *      string from CrowdIn is "Solve $3\\text{nickles} = x\\text{pennies}$"
- *      then englishMath would be "3\\text{nickles} = x\\text{pennies}"
+ *      string from CrowdIn is "Solve $3\\text{nickles} = x\\textbf{pennies}$"
+ *      then englishMath would be "3\\text{nickles} = x\\textbf{pennies}"
  * @param {Object} dict A mapping from english words to translated words that
- *      appear inside \\text{} blocks.
+ *      appear inside \\text{} and \\textbf{} blocks.
  * @returns {string} translated math.
  */
 function replaceTextInMath(englishMath, dict) {
     let translatedMath = englishMath;
+
+    const textCommands = [
+        "text",
+        "textbf",
+    ];
+
     for (const [englishText, translatedText] of Object.entries(dict)) {
-        const regex = new RegExp(`\\\\text(\\s*){${englishText}}`, 'g');
-        // make sure the spacing matches in the replacement
-        const replacement = `\\text$1{${translatedText}}`;
-        translatedMath = translatedMath.replace(regex, replacement);
+        textCommands.forEach(cmd => {
+            const regex = new RegExp(`\\\\${cmd}(\\s*){${englishText}}`, 'g');
+            // make sure the spacing matches in the replacement
+            const replacement = `\\${cmd}$1{${translatedText}}`;
+            translatedMath = translatedMath.replace(regex, replacement);
+        });
     }
     return translatedMath;
 }
@@ -429,7 +464,7 @@ class TranslationAssistant {
             if (/^(__MATH__|__GRAPHIE__|__WIDGET__)$/.test(normalObj.str)) {
                 if (normalObj.str === '__MATH__') {
                     // Only translate the math if it doesn't include any
-                    // natural language text in a \text command.
+                    // natural language text in \text and \textbf commands.
                     if (englishStr.indexOf('\\text') === -1) {
                         return [item, translateMath(englishStr, lang)];
                     }

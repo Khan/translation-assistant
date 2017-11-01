@@ -429,7 +429,7 @@ describe('TranslationAssistant (widgets)', function() {
     });
 });
 
-describe('TranslationAssistant (\\text{})', function() {
+describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
     it('should handle a single \\text{}', function() {
         const allItems = [{
             englishStr: 'simplify $\\text{red} = 5$',
@@ -442,6 +442,21 @@ describe('TranslationAssistant (\\text{})', function() {
 
         assertSuggestions(allItems, itemsToTranslate, [
             'simplifyz $3 * \\text{roja} = 20$'
+        ]);
+    });
+
+    it('should handle a single \\texbf{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\textbf{red} = 5$',
+            translatedStr: 'simplifyz $\\textbf{roja} = 5$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\textbf{red} = 20$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\textbf{roja} = 20$'
         ]);
     });
 
@@ -467,6 +482,28 @@ describe('TranslationAssistant (\\text{})', function() {
         ]);
     });
 
+    it('should handle multiple items with one per item \\textbf{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\textbf{red} = 5$',
+            translatedStr: 'simplifyz $\\textbf{roja} = 5$',
+        }, {
+            englishStr: 'simplify $\\textbf{blue} = 10$',
+            translatedStr: 'simplifyz $\\textbf{azul} = 10$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\textbf{red} = 20$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $14 = \\textbf{blue} - 9$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\textbf{roja} = 20$',
+            'simplifyz $14 = \\textbf{azul} - 9$'
+        ]);
+    });
+
     it('should handle an item with multiple \\text{}', function() {
         const allItems = [{
             englishStr: 'simplify $\\text{red} = 5 * \\text{blue}$',
@@ -482,6 +519,69 @@ describe('TranslationAssistant (\\text{})', function() {
         // mathDictionary which maps "red" to "azul" and "blue" to "roja".
         assertSuggestions(allItems, itemsToTranslate, [
             'simplifyz $3 * \\text{azul} = 20 - \\text{roja}$'
+        ]);
+    });
+
+    it('should handle an item with multiple \\textbf{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\textbf{red} = 5 * \\textbf{blue}$',
+            translatedStr: 'simplifyz $\\textbf{azul} = 5 * \\textbf{roja}$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\textbf{red} = 20 - \\textbf{blue}$',
+            translatedStr: '',
+        }];
+
+        // Even though "red" in Spanish should be "roja", smart translations
+        // doesn't know that.  The template built from allItems will contain a
+        // mathDictionary which maps "red" to "azul" and "blue" to "roja".
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\textbf{azul} = 20 - \\textbf{roja}$'
+        ]);
+    });
+
+    it('should not handle an item with different order of \\text{} and ' +
+            '\\textbf{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5 * \\textbf{blue}$',
+            translatedStr: 'simplifyz $\\textbf{azul} = 5 * \\text{roja}$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\text{blue} = 20 - \\textbf{red}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $3 * \\textbf{blue} = 20 - \\text{red}$',
+            translatedStr: '',
+        }];
+
+        // Since the order of \\text and \\textbf is different between English
+        // and translated strings, the mathDictionary template built from
+        // allItems cannot find a match between the English (input) and the
+        // translated (output).
+        const translatedStrs = [];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should handle an item with \\text{} and \\textbf{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5 * \\textbf{blue}$',
+            translatedStr: 'simplifyz $\\text{azul} = 5 * \\textbf{roja}$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\text{red} = 20 - \\textbf{blue}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $3 * \\textbf{red} = 20 - \\text{blue}$',
+            translatedStr: '',
+        }];
+
+        // Even though "red" in Spanish should be "roja", smart translations
+        // doesn't know that.  The template built from allItems will contain a
+        // mathDictionary which maps "red" to "azul" and "blue" to "roja".
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\text{azul} = 20 - \\textbf{roja}$',
+            'simplifyz $3 * \\textbf{azul} = 20 - \\text{roja}$'
         ]);
     });
 
@@ -514,13 +614,85 @@ describe('TranslationAssistant (\\text{})', function() {
         ]);
     });
 
+    it('should handle multiple items with multiple \\textbf{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\textbf{red} = 5 * \\textbf{blue}$',
+            translatedStr: 'simplifyz $\\textbf{azul} = 5 * \\textbf{roja}$',
+        }, {
+            englishStr: 'simplify $\\textbf{red} + \\textbf{yellow} = 42$',
+            translatedStr: 'simplifyz $\\textbf{roja} + \\textbf{amarillo} = 42$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\textbf{red} = 20 - \\textbf{blue}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $x - \\textbf{yellow} = \\textbf{red}$',
+            translatedStr: '',
+        }];
+
+        // The group keys are different for the items in allItems.  The first
+        // is {str:"simplify __MATH__",texts:[["red","blue"]]}.  The second is
+        // {str:"simplify __MATH__",texts:[["red","yellow"]]}.  Because the
+        // group keys are different there ends up being two different groups,
+        // each with their own template with its own mathDictionary.  The first
+        // template translates \\textbf{red} to \\textbf{azul} while the second
+        // template translates \\textbf{red} to \\textbf{roja}.
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\textbf{azul} = 20 - \\textbf{roja}$',
+            'simplifyz $x - \\textbf{amarillo} = \\textbf{roja}$',
+        ]);
+    });
+
+    it('should handle multiple items with \\text{} and \\textbf{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\textbf{red} = 5 * \\text{blue}$',
+            translatedStr: 'simplifyz $\\textbf{azul} = 5 * \\text{roja}$',
+        }, {
+            englishStr: 'simplify $\\text{red} + \\textbf{yellow} = 42$',
+            translatedStr: 'simplifyz $\\text{roja} + \\textbf{amarillo} = 42$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\textbf{red} = 20 - \\text{blue}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $3 * \\text{red} = 20 - \\textbf{blue}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $x - \\text{yellow} = \\textbf{red}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $x - \\textbf{yellow} = \\text{red}$',
+            translatedStr: '',
+        }];
+
+        // The group keys are different for the items in allItems.  The first
+        // is {str:"simplify __MATH__",texts:[["red","blue"]]}.  The second is
+        // {str:"simplify __MATH__",texts:[["red","yellow"]]}.  Because the
+        // group keys are different there ends up being two different groups,
+        // each with their own template with its own mathDictionary.  The first
+        // template translates \\textbf{red} to \\textbf{azul} while the second
+        // template translates \\text{red} to \\text{roja}.
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 * \\textbf{azul} = 20 - \\text{roja}$',
+            'simplifyz $3 * \\text{azul} = 20 - \\textbf{roja}$',
+            'simplifyz $x - \\text{amarillo} = \\textbf{roja}$',
+            'simplifyz $x - \\textbf{amarillo} = \\text{roja}$',
+        ]);
+    });
+
     it('should not translate items with unknown text', function() {
         const allItems = [{
             englishStr: 'simplify $\\text{red} = 5$',
             translatedStr: 'simplifyz $\\text{roja} = 5$',
+        }, {
+            englishStr: 'simplify $\\textbf{red} = 5$',
+            translatedStr: 'simplifyz $\\textbf{roja} = 5$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $\\text{blue}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $\\textbf{blue}$',
             translatedStr: '',
         }];
 
@@ -529,6 +701,7 @@ describe('TranslationAssistant (\\text{})', function() {
 
         const translation = assistant.suggest(itemsToTranslate);
         assert.equal(translation[0][1], null);
+        assert.equal(translation[1][1], null);
     });
 
     it('should use the translation from the first item', function() {
@@ -542,9 +715,15 @@ describe('TranslationAssistant (\\text{})', function() {
         const itemsToTranslate = [{
             englishStr: '$\\text{red} = 15$',
             translatedStr: '',
+        }, {
+            englishStr: '$\\textbf{red} = 15$',
+            translatedStr: '',
         }];
 
-        assertSuggestions(allItems, itemsToTranslate, ['$\\text{roja} = 15$']);
+        assertSuggestions(allItems, itemsToTranslate, [
+            '$\\text{roja} = 15$',
+            '$\\textbf{roja} = 15$',
+        ]);
     });
 
     it('should work with spaces between \\text and {', function() {
@@ -555,6 +734,16 @@ describe('TranslationAssistant (\\text{})', function() {
             englishStr: '$\\text{Area}} = 12 \\text { square cm}$',
             translated: ''
         }], ['$\\text{Fläche}} = 12 \\text { Quadratzentimeter}$']);
+    });
+
+    it('should work with spaces between \\textbf and {', function() {
+        assertSuggestions([{
+            englishStr: '$\\textbf{Area}} = 6 \\textbf { square cm}$',
+            translatedStr: '$\\textbf{Fläche}} = 6 \\textbf { Quadratzentimeter}$'
+        }], [{
+            englishStr: '$\\textbf{Area}} = 12 \\textbf { square cm}$',
+            translated: ''
+        }], ['$\\textbf{Fläche}} = 12 \\textbf { Quadratzentimeter}$']);
     });
 });
 
@@ -602,32 +791,31 @@ describe('normalizeString', function() {
             '{"str":"simplify __MATH__","texts":[["red"]]}');
 
         assert.equal(
-            stringToGroupKey('${\\text{red}, \\text{blue}$'),
-            '{"str":"__MATH__","texts":[["blue","red"]]}');
+            stringToGroupKey('simplify ${\\textbf{red} = 5$'),
+            '{"str":"simplify __MATH__","texts":[["red"]]}');
 
         assert.equal(
-            stringToGroupKey('${\\text{red}$ and $\\text{blue}$'),
+            stringToGroupKey('${\\text{red}, \\textbf{green}, \\text{blue}$'),
+            '{"str":"__MATH__","texts":[["blue","green","red"]]}');
+
+        assert.equal(
+            stringToGroupKey('${\\text{red}$ and $\\textbf{blue}$'),
             '{"str":"__MATH__ and __MATH__","texts":[["red"],["blue"]]}');
 
         assert.equal(
-            stringToGroupKey('${\\text{red} + \\text{blue}$ and $1 + 2$'),
+            stringToGroupKey('${\\text{red} + \\textbf{blue}$ and $1 + 2$'),
             '{"str":"__MATH__ and __MATH__","texts":[["blue","red"],[]]}');
     });
 });
 
-describe('populateTemplate where englishStr contains \\text{}', function() {
+describe('populateTemplate where englishStr contains \\text{} and ' +
+        '\\textbf{}', function() {
     const englishStr = '$x = 1$, $\\text{red} = 5$, $\\text{yellow} = 10$, ' +
-        '$\\text{blue} = 10$';
+        '$\\text{blue} = 10$, $\\textbf{red} = 5$';
     const translatedStr = '$\\text{azul} = 10$, $x = 1$, ' +
-        '$\\text{amarillo} = 10$, $\\text{roja} = 5$, $x = 1$, ' +
-        '$\\text{azul} = 10$';
+        '$\\textbf{roja} = 5$, $\\text{amarillo} = 10$, $\\text{roja} = 5$, ' +
+        '$x = 1$, $\\text{azul} = 10$';
     const lang = 'es';
-
-    let template;
-
-    beforeEach(function() {
-        template = createTemplate(englishStr, translatedStr, lang);
-    });
 
     it('should translate the string used to create the template', function() {
         const template = createTemplate(englishStr, translatedStr, lang);
@@ -640,12 +828,14 @@ describe('populateTemplate where englishStr contains \\text{}', function() {
         const template = createTemplate(englishStr, translatedStr, lang);
 
         const newEnglishStr = '$x = 21$, $\\text{red} = 25$, ' +
-            '$\\text{yellow} = 210$, $\\text{blue} = 210$';
+            '$\\text{yellow} = 210$, $\\text{blue} = 210$, ' +
+            '$\\textbf{red} = 25$';
         const newTranslatedStr =
             populateTemplate(template, newEnglishStr, lang);
 
         assert.equal(newTranslatedStr,
-            '$\\text{azul} = 210$, $x = 21$, $\\text{amarillo} = 210$, ' +
-            '$\\text{roja} = 25$, $x = 21$, $\\text{azul} = 210$');
+            '$\\text{azul} = 210$, $x = 21$, $\\textbf{roja} = 25$, ' +
+            '$\\text{amarillo} = 210$, $\\text{roja} = 25$, $x = 21$, ' +
+            '$\\text{azul} = 210$');
     });
 });
