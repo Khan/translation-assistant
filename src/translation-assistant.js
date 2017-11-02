@@ -300,6 +300,8 @@ function getMathDictionary(englishStr, translatedStr) {
  *          been translated yet.
  */
 function createTemplate(englishStr, translatedStr, lang) {
+    englishStr = rtrim(englishStr);
+    translatedStr = rtrim(translatedStr);
     const translatedLines = translatedStr.split(LINE_BREAK);
     const mathDictionary = getMathDictionary(englishStr, translatedStr);
 
@@ -392,10 +394,11 @@ function populateTemplate(template, englishStr, lang) {
     englishStr = rtrim(englishStr);
     const englishLines = englishStr.split(LINE_BREAK);
 
-    if (template.lines.length != englishLines.length) {
-        //The translation modified some new lines.  Let's just throw this out
-        //as we won't be able to give a good suggestion.
-        return;
+    if (template.lines.length !== englishLines.length) {
+        // The English string has a different number of lines than the
+        // suggestion template, let's just throw this out as we won't be able
+        // to give a good suggestion.
+        return undefined;
     }
 
     let maths = englishStr.match(MATH_REGEX) || [];

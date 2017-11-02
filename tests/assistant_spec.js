@@ -90,7 +90,7 @@ describe('TranslationAssistant', function() {
             englishStr: 'simplify $3x = 9$',
             translatedStr: '',
         }];
-        const translatedStrs = [];
+        const translatedStrs = [null];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
@@ -115,7 +115,7 @@ describe('TranslationAssistant', function() {
             englishStr: 'simplify $6x = 36$',
             translatedStr: '',
         }];
-        const translatedStrs = [];
+        const translatedStrs = [null];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
@@ -212,6 +212,20 @@ describe('TranslationAssistant (math)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
+    it('should not handle math on mismatched multiple lines', function() {
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$ answer $x = 2$',
+            translatedStr: 'simplifyz $2x = 4$\n\nanswerz $x = 2$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$ answer $x = 3$',
+            translatedStr: '',
+        }];
+        const translatedStrs = [null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
     it('should handle math on multiple lines', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$\n\nanswer $x = 2$',
@@ -258,7 +272,7 @@ describe('TranslationAssistant (math)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
-    it('should handle trailing newline mismatches', function() {
+    it('should handle trailing newline in englishStr', function() {
         assertSuggestions([{
             englishStr:
                 'simplify $2x = 4$, answer $x = 2$\n\n',
@@ -271,6 +285,26 @@ describe('TranslationAssistant (math)', function() {
         }], [
             'simplifyz $3x = 9$, answerz $x = 3$',
         ]);
+    });
+
+    it('should handle trailing newline in translatedStr', function() {
+        const allItems = [{
+            englishStr: 'simplify $2x = 4$, answer $x = 2$',
+            translatedStr:'simplifyz $2x = 4$, answerz $x = 2$\n\n',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3x = 9$, answer $x = 3$',
+            translatedStr: '',
+        }];
+        // We trim trailing newlines in the translated string inside
+        // createTemplate and we do the same for the English string inside
+        // populateTemplate in order to match the string & template when
+        // suggesting translations. That is why we have no trailing newlines
+        // in translatedStrs here, since the translated string created from the
+        // template will not have any trailing newlines.
+        const translatedStrs = ['simplifyz $3x = 9$, answerz $x = 3$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should handle translations that re-order math', function() {
@@ -571,7 +605,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         // and translated strings, the mathDictionary template built from
         // allItems cannot find a match between the English (input) and the
         // translated (output).
-        const translatedStrs = [];
+        const translatedStrs = [null];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
