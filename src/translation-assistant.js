@@ -57,11 +57,11 @@ function stringToGroupKey(str) {
 
     // This maps formula to an array which may contain 0 or more
     // strings which were found inside the \text{} and \textbf{} blocks
-    const texts = maths.map(math => {
+    const texts = maths.map((math) => {
         const result = [];
 
         allMatches(math, /\\text(?:bf)?{([^}]*)}/g,
-            matches => result.push(matches[1]));
+            (matches) => result.push(matches[1]));
 
         // The natural language text is sorted so that even if the formula is
         // different and the natural language text is in a different order
@@ -78,7 +78,7 @@ function stringToGroupKey(str) {
         .replace(/__MATH__[\t ]*__WIDGET__/g, '__MATH__ __WIDGET__')
         .split(LINE_BREAK).map((line) => line.trim()).join(LINE_BREAK);
 
-    return JSON.stringify({ str, texts });
+    return JSON.stringify({str, texts});
 }
 
 /**
@@ -110,13 +110,20 @@ function stringToGroupKey(str) {
  *        for strings inside \text{} and \textbf{} blocks.
  * @returns {Array} An array representing the mapping.
  */
-// TODO(kevinb): change mathDictionary to mathDictionaries
-function getMapping(englishStr, translatedStr, lang, findRegex, mathDictionary) {
+function getMapping(
+    englishStr,
+    translatedStr,
+    lang,
+    findRegex,
+    // TODO(kevinb): change mathDictionary to mathDictionaries
+    mathDictionary
+) {
     let inputs = englishStr.match(findRegex) || [];
-    let outputs = translatedStr.match(findRegex) || [];
+    const outputs = translatedStr.match(findRegex) || [];
 
     if (findRegex === MATH_REGEX) {
-        inputs = inputs.map(input => replaceTextInMath(input, mathDictionary));
+        inputs = inputs.map(
+            (input) => replaceTextInMath(input, mathDictionary));
     }
 
     const mapping = [];
@@ -148,6 +155,11 @@ function getMapping(englishStr, translatedStr, lang, findRegex, mathDictionary) 
 /**
  * Helper for getting all subgroup matches from a string.  The callback is
  * passed the matches array for each match in `text`.
+ *
+ * @param {String} text The string to find matches in.
+ * @param {RegExp} regex A regular expression to match subgroups in text.
+ * @param {Function} callback A callback function to pass found matches in text.
+ * @returns {void}
  */
 function allMatches(text, regex, callback) {
     let matches = regex.exec(text);
@@ -177,11 +189,17 @@ function allMatches(text, regex, callback) {
  *     "blue": "azul",
  *     "yellow": "amarillo"
  * }
+ *
+ * @param {String} englishStr The English source string.
+ * @param {String} translatedStr The translation of the englishStr.
+ * @returns {Object} The English to translated string mapping for strings inside
+ *          \text{} and \textbf{} blocks.
+ *
+ * TODO(kevinb): automatically handle \text{} blocks containing numbers only.
  */
-// TODO(kevinb): automatically handle \text{} blocks containing numbers only
 function getMathDictionary(englishStr, translatedStr) {
-    let inputs = englishStr.match(MATH_REGEX) || [];
-    let outputs = translatedStr.match(MATH_REGEX) || [];
+    const inputs = englishStr.match(MATH_REGEX) || [];
+    const outputs = translatedStr.match(MATH_REGEX) || [];
 
     const inputMap = {};
     const outputMap = {};
@@ -191,7 +209,7 @@ function getMathDictionary(englishStr, translatedStr) {
         [TEXTBF_REGEX, '__TEXTBF__'],
     ];
 
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
         let normalized = input;
 
         replaceRegexes.forEach(([regex, str]) => {
@@ -204,7 +222,7 @@ function getMathDictionary(englishStr, translatedStr) {
         inputMap[normalized].push(input);
     });
 
-    outputs.forEach(output => {
+    outputs.forEach((output) => {
         let normalized = output;
 
         replaceRegexes.forEach(([regex, str]) => {
@@ -224,7 +242,7 @@ function getMathDictionary(englishStr, translatedStr) {
         [/__TEXTBF__/, TEXTBF_REGEX],
     ];
 
-    Object.keys(inputMap).forEach(key => {
+    Object.keys(inputMap).forEach((key) => {
         matchRegexes.forEach(([match, regex]) => {
             if (match.test(key)) {
                 const input = inputMap[key];
@@ -241,13 +259,13 @@ function getMathDictionary(englishStr, translatedStr) {
                 // and \textbf{} blocks from the current English formula.
                 const inputTexts = {};
                 allMatches(input, regex,
-                    matches => inputTexts[matches[1]] = true);
+                    (matches) => inputTexts[matches[1]] = true);
 
                 // Compute the set of all natural language text within \text{}
                 // and \textbf{} blocks from the current translated formula.
                 const outputTexts = {};
                 allMatches(output, regex,
-                    matches => outputTexts[matches[1]] = true);
+                    (matches) => outputTexts[matches[1]] = true);
 
                 const inputKeys = Object.keys(inputTexts);
                 const outputKeys = Object.keys(outputTexts);
@@ -292,12 +310,13 @@ function createTemplate(englishStr, translatedStr, lang) {
                     .replace(GRAPHIE_REGEX, '__GRAPHIE__')
                     .replace(WIDGET_REGEX, '__WIDGET__')),
             mathMapping:
-                getMapping(englishStr, translatedStr, lang, MATH_REGEX, mathDictionary),
+                getMapping(englishStr, translatedStr, lang, MATH_REGEX,
+                    mathDictionary),
             graphieMapping:
                 getMapping(englishStr, translatedStr, lang, GRAPHIE_REGEX),
             widgetMapping:
                 getMapping(englishStr, translatedStr, lang, WIDGET_REGEX),
-            mathDictionary: mathDictionary
+            mathDictionary: mathDictionary,
         };
     } catch(e) {
         return e;
@@ -308,11 +327,12 @@ function createTemplate(englishStr, translatedStr, lang) {
  * Handles any per language special case translations, e.g. Portuguese uses
  * `sen` instead of `sin`.
  *
- * @param {string} math
- * @param {string} lang
- * @returns {string}
+ * @param {string} math A math expression to translate for locale.
+ * @param {string} lang The locale of the translation language.
+ * @returns {string} The translated math expression.
+ *
+ * TODO(kevinb): handle \text{} inside math.
  */
-// TODO(kevinb): handle \text{} inside math
 function translateMath(math, lang) {
     if (lang === 'pt') {
         return math.replace(/\\sin/g, '\\operatorname\{sen\}');
@@ -321,6 +341,12 @@ function translateMath(math, lang) {
     }
 }
 
+/**
+ * Trim trailing whitespace at the end of string.
+ *
+ * @param {String} str A string to trim trailing whitespace in.
+ * @returns {String} The string with no trailing whitespace.
+ */
 function rtrim(str) {
     return str.replace(/\s+$/g, '');
 }
@@ -339,12 +365,12 @@ function replaceTextInMath(englishMath, dict) {
     let translatedMath = englishMath;
 
     const textCommands = [
-        "text",
-        "textbf",
+        'text',
+        'textbf',
     ];
 
     for (const [englishText, translatedText] of Object.entries(dict)) {
-        textCommands.forEach(cmd => {
+        textCommands.forEach((cmd) => {
             const regex = new RegExp(`\\\\${cmd}(\\s*){${englishText}}`, 'g');
             // make sure the spacing matches in the replacement
             const replacement = `\\${cmd}$1{${translatedText}}`;
@@ -380,8 +406,8 @@ function populateTemplate(template, englishStr, lang) {
     let graphieIndex = 0;
     let widgetIndex = 0;
 
-    maths = maths.map(math => {
-        var result = translateMath(math, lang);
+    maths = maths.map((math) => {
+        const result = translateMath(math, lang);
         return replaceTextInMath(result, template.mathDictionary);
     });
 
@@ -406,12 +432,16 @@ class TranslationAssistant {
     /**
      * Create a new TranslationAssistant instance.
      *
-     * @param allItems - The items to be grouped and used to for generating
-     *     suggestions, see getSuggestionGroups.
-     * @param getEnglishStr - Function to extract English strings from items.
-     * @param getTranslation - Function to get a translated string for an item.
-     * @param lang - ka_locale, used for language specific translations, e.g.
-     *     in Portuguese, `\sin` should be `\operatorname\{sen\}`.
+     * @param {Array<Object>} allItems - The items to be grouped and used to
+     *        for generating suggestions, see getSuggestionGroups.
+     * @param {Function} getEnglishStr - Function to extract English strings
+     *        from items.
+     * @param {Function} getTranslation - Function to get a translated string
+     *        for an item.
+     * @param {String} lang - ka_locale, used for language specific
+     *        translations, e.g. in Portuguese, `\sin` should be
+     *        `\operatorname\{sen\}`.
+     * @returns {void}
      */
     constructor(allItems, getEnglishStr, getTranslation, lang) {
         this.getEnglishStr = getEnglishStr;
@@ -443,8 +473,10 @@ class TranslationAssistant {
      *      ]
      *  ]
      *
-     * @param itemsToTranslate – same type of objects as the `allItems`
-     * argument that was passed to the constructor.
+     * @param {Array<Object>} itemsToTranslate – same type of objects as the
+     *        `allItems` argument that was passed to the constructor.
+     * @returns {Array<[Object, String]>} An array of items and their translated
+     *          suggestions.
      *
      * Note: the items given in the example have `englishStr` and `jiptStr`
      * properties, but they could have any shape as long as the `getEnglishStr`
@@ -454,7 +486,7 @@ class TranslationAssistant {
     suggest(itemsToTranslate) {
         const {suggestionGroups, lang} = this;
 
-        return itemsToTranslate.map(item => {
+        return itemsToTranslate.map((item) => {
             const englishStr = this.getEnglishStr(item);
             const normalStr = stringToGroupKey(englishStr);
             const normalObj = JSON.parse(normalStr);
@@ -531,12 +563,15 @@ class TranslationAssistant {
      *    },
      *    ...
      * }
+     *
+     * @param {Array<Object>} items The items with English strings to group.
+     * @returns {Object} A mapping of groups to items and translation template.
      */
     getSuggestionGroups(items) {
         const suggestionGroups = {};
 
-        items.forEach(obj => {
-            var key = stringToGroupKey(this.getEnglishStr(obj));
+        items.forEach((obj) => {
+            const key = stringToGroupKey(this.getEnglishStr(obj));
 
             if (suggestionGroups[key]) {
                 suggestionGroups[key].push(obj);
@@ -545,7 +580,7 @@ class TranslationAssistant {
             }
         });
 
-        Object.keys(suggestionGroups).forEach(key => {
+        Object.keys(suggestionGroups).forEach((key) => {
             const items = suggestionGroups[key];
 
             for (const item of items) {

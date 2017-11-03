@@ -3,7 +3,11 @@
 const assert = require('assert');
 const TranslationAssistant = require('../lib/translation-assistant');
 
-const {stringToGroupKey, createTemplate, populateTemplate} = TranslationAssistant;
+const {
+    stringToGroupKey,
+    createTemplate,
+    populateTemplate,
+} = TranslationAssistant;
 
 /**
  * Return a fake graphie string.
@@ -22,12 +26,21 @@ const graphie4 = makeGraphie();
 const graphie5 = makeGraphie();
 const graphie6 = makeGraphie();
 
-const getEnglishStr = item => item.englishStr;
-const getTranslation = item => item.translatedStr;
+const getEnglishStr = (item) => item.englishStr;
+const getTranslation = (item) => item.translatedStr;
 const lang = 'fr';
 
 /**
  * Assert that the suggested translations match the translations.
+ *
+ * @param {Array<Object>} allItems The items to be grouped and used to for
+ *        generating suggestions.
+ * @param {Array<Object>} itemsToTranslate Items to translate using smart
+ *        suggestions calculated from `allItems`.
+ * @param {Array<String|null>} translatedStrs List of the expected translated
+ *        strings for items, if an expected translation is `null` it means that
+ *        there is no suggested translation expected for the item.
+ * @returns {void}
  */
 function assertSuggestions(allItems, itemsToTranslate, translatedStrs) {
     const assistant =
@@ -44,11 +57,11 @@ describe('TranslationAssistant', function() {
     it('should handle no math', function() {
         const allItems = [{
             englishStr: 'Both are wrong',
-            translatedStr: 'Ambas son impares'
+            translatedStr: 'Ambas son impares',
         }];
         const itemsToTranslate = [{
             englishStr: 'Both are wrong',
-            translatedStr: ''
+            translatedStr: '',
         }];
         const translatedStrs = ['Ambas son impares'];
 
@@ -58,14 +71,14 @@ describe('TranslationAssistant', function() {
     it('should handle non-string items', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$',
-            translatedStr: 'simplifyz $2x = 4$'
+            translatedStr: 'simplifyz $2x = 4$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$',
-            translatedStr: ''
+            translatedStr: '',
         }];
         const translatedStrs = [
-            'simplifyz $3x = 9$'
+            'simplifyz $3x = 9$',
         ];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
@@ -75,7 +88,7 @@ describe('TranslationAssistant', function() {
         const allItems = [];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$',
-            translatedStr: ''
+            translatedStr: '',
         }];
         const translatedStrs = [];
 
@@ -100,14 +113,14 @@ describe('TranslationAssistant', function() {
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $6x = 36$',
-            translatedStr: ''
+            translatedStr: '',
         }];
         const translatedStrs = [];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
-    it("can provide suggestions for multiple groups", function() {
+    it('can provide suggestions for multiple groups', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$, answer $x = 2$',
             translatedStr: 'simplifyz $2x = 4$, answerz $x = 2$',
@@ -120,7 +133,7 @@ describe('TranslationAssistant', function() {
             translatedStr: '',
         }, {
             englishStr: 'simplify $4x = 16$',
-            translatedStr: 'crowdin:98:crowdin'
+            translatedStr: 'crowdin:98:crowdin',
         }];
         const translatedStrs = [
             'simplifyz $3x = 9$, answerz $x = 3$',
@@ -130,7 +143,7 @@ describe('TranslationAssistant', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
-    describe("no existing translations", function() {
+    describe('no existing translations', function() {
         it('should return null when there\'s nl text', function() {
             const allItems = [];
             const itemsToTranslate = [{
@@ -145,8 +158,8 @@ describe('TranslationAssistant', function() {
         it('should return the same math', function() {
             const allItems = [];
             const itemsToTranslate = [
-                { englishStr: '$3x = 9$', translatedStr: '' },
-                { englishStr: 'hello', translatedStr: '' },
+                {englishStr: '$3x = 9$', translatedStr: ''},
+                {englishStr: 'hello', translatedStr: ''},
             ];
             const translatedStrs = ['$3x = 9$', null];
 
@@ -256,7 +269,7 @@ describe('TranslationAssistant (math)', function() {
                 'simplify $3x = 9$, answer $x = 3$\n\n',
             translatedStr: '',
         }], [
-            'simplifyz $3x = 9$, answerz $x = 3$'
+            'simplifyz $3x = 9$, answerz $x = 3$',
         ]);
     });
 
@@ -303,7 +316,7 @@ describe('TranslationAssistant (math)', function() {
             translatedStr: '',
         }, {
             englishStr: 'simplify $4x = 16$',
-            translatedStr: 'crowdin:98:crowdin'
+            translatedStr: 'crowdin:98:crowdin',
         }];
         const translatedStrs = ['simplifyz $3x = 9$', 'simplifyz $4x = 16$'];
 
@@ -341,7 +354,7 @@ describe('TranslationAssistant (graphie)', function() {
 
         assertSuggestions(allItems, itemsToTranslate, [
             `simplifyz ${graphie4}, answerz ${graphie5}\n\n` +
-            `hintz: ${graphie6}`
+            `hintz: ${graphie6}`,
         ]);
     });
 
@@ -356,14 +369,14 @@ describe('TranslationAssistant (graphie)', function() {
         }];
 
         assertSuggestions(allItems, itemsToTranslate, [
-            `answerz ${graphie4}, simplifyz ${graphie3}`
+            `answerz ${graphie4}, simplifyz ${graphie3}`,
         ]);
     });
 
     it('should handle strings that are only graphies', function() {
         const allItems = [{
             englishStr: graphie1,
-            translatedStr: graphie1
+            translatedStr: graphie1,
         }];
         const itemsToTranslate = [{
             englishStr: graphie2,
@@ -393,7 +406,7 @@ describe('TranslationAssistant (widgets)', function() {
 
         assertSuggestions(allItems, itemsToTranslate, [
             'simplifyz [[☃ Expression 1]], answerz [[☃ Expression 2]]\n\n' +
-            'hintz: [[☃ Expression 3]]'
+            'hintz: [[☃ Expression 3]]',
         ]);
     });
 
@@ -411,14 +424,14 @@ describe('TranslationAssistant (widgets)', function() {
         }];
 
         assertSuggestions(allItems, itemsToTranslate, [
-            'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]'
+            'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]',
         ]);
     });
 
     it('should handle strings that are only widgets', function() {
         const allItems = [{
             englishStr: '[[☃ Expression 1]]',
-            translatedStr: '[[☃ Expression 1]]'
+            translatedStr: '[[☃ Expression 1]]',
         }];
         const itemsToTranslate = [{
             englishStr: '[[☃ Expression 1]]',
@@ -441,7 +454,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         }];
 
         assertSuggestions(allItems, itemsToTranslate, [
-            'simplifyz $3 * \\text{roja} = 20$'
+            'simplifyz $3 * \\text{roja} = 20$',
         ]);
     });
 
@@ -456,7 +469,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         }];
 
         assertSuggestions(allItems, itemsToTranslate, [
-            'simplifyz $3 * \\textbf{roja} = 20$'
+            'simplifyz $3 * \\textbf{roja} = 20$',
         ]);
     });
 
@@ -478,7 +491,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
 
         assertSuggestions(allItems, itemsToTranslate, [
             'simplifyz $3 * \\text{roja} = 20$',
-            'simplifyz $14 = \\text{azul} - 9$'
+            'simplifyz $14 = \\text{azul} - 9$',
         ]);
     });
 
@@ -500,7 +513,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
 
         assertSuggestions(allItems, itemsToTranslate, [
             'simplifyz $3 * \\textbf{roja} = 20$',
-            'simplifyz $14 = \\textbf{azul} - 9$'
+            'simplifyz $14 = \\textbf{azul} - 9$',
         ]);
     });
 
@@ -518,7 +531,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         // doesn't know that.  The template built from allItems will contain a
         // mathDictionary which maps "red" to "azul" and "blue" to "roja".
         assertSuggestions(allItems, itemsToTranslate, [
-            'simplifyz $3 * \\text{azul} = 20 - \\text{roja}$'
+            'simplifyz $3 * \\text{azul} = 20 - \\text{roja}$',
         ]);
     });
 
@@ -536,7 +549,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         // doesn't know that.  The template built from allItems will contain a
         // mathDictionary which maps "red" to "azul" and "blue" to "roja".
         assertSuggestions(allItems, itemsToTranslate, [
-            'simplifyz $3 * \\textbf{azul} = 20 - \\textbf{roja}$'
+            'simplifyz $3 * \\textbf{azul} = 20 - \\textbf{roja}$',
         ]);
     });
 
@@ -581,7 +594,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         // mathDictionary which maps "red" to "azul" and "blue" to "roja".
         assertSuggestions(allItems, itemsToTranslate, [
             'simplifyz $3 * \\text{azul} = 20 - \\textbf{roja}$',
-            'simplifyz $3 * \\textbf{azul} = 20 - \\text{roja}$'
+            'simplifyz $3 * \\textbf{azul} = 20 - \\text{roja}$',
         ]);
     });
 
@@ -620,7 +633,8 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
             translatedStr: 'simplifyz $\\textbf{azul} = 5 * \\textbf{roja}$',
         }, {
             englishStr: 'simplify $\\textbf{red} + \\textbf{yellow} = 42$',
-            translatedStr: 'simplifyz $\\textbf{roja} + \\textbf{amarillo} = 42$',
+            translatedStr: 'simplifyz $\\textbf{roja} + ' +
+                '\\textbf{amarillo} = 42$',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3 * \\textbf{red} = 20 - \\textbf{blue}$',
@@ -729,20 +743,21 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
     it('should work with spaces between \\text and {', function() {
         assertSuggestions([{
             englishStr: '$\\text{Area}} = 6 \\text { square cm}$',
-            translatedStr: '$\\text{Fläche}} = 6 \\text { Quadratzentimeter}$'
+            translatedStr: '$\\text{Fläche}} = 6 \\text { Quadratzentimeter}$',
         }], [{
             englishStr: '$\\text{Area}} = 12 \\text { square cm}$',
-            translated: ''
+            translated: '',
         }], ['$\\text{Fläche}} = 12 \\text { Quadratzentimeter}$']);
     });
 
     it('should work with spaces between \\textbf and {', function() {
         assertSuggestions([{
             englishStr: '$\\textbf{Area}} = 6 \\textbf { square cm}$',
-            translatedStr: '$\\textbf{Fläche}} = 6 \\textbf { Quadratzentimeter}$'
+            translatedStr: '$\\textbf{Fläche}} = 6 ' +
+                '\\textbf { Quadratzentimeter}$',
         }], [{
             englishStr: '$\\textbf{Area}} = 12 \\textbf { square cm}$',
-            translated: ''
+            translated: '',
         }], ['$\\textbf{Fläche}} = 12 \\textbf { Quadratzentimeter}$']);
     });
 });
@@ -766,11 +781,11 @@ describe('TranslationAssistant **bold**', function() {
 
         assertSuggestions(allItems, itemsToTranslate, [
             '**Solvez** $4x = 16$',
-            'Solvez $2x - 5 = 10$'
+            'Solvez $2x - 5 = 10$',
         ]);
     });
 
-    it('should not translate non-bold from bold', function () {
+    it('should not translate non-bold from bold', function() {
         const allItems = [{
             englishStr: '**Solve** $2x = 5$',
             translatedStr: '**Solvez** $2x = 5$',

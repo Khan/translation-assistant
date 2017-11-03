@@ -30,7 +30,7 @@
         "guard-for-in": 2,
         "no-alert": 2,
         "no-throw-literal": 2,
-        "object-curly-spacing": [2, "always"],
+        "object-curly-spacing": [2, "never"],
         "no-array-constructor": 2,
         "no-new-object": 2,
         "one-var": [2, "never"]
@@ -39,5 +39,6 @@
         "es6": true,
         "node": true
     },
-    "extends": "eslint:recommended"
+    "extends": "eslint:recommended",
+    "root": true
 }
