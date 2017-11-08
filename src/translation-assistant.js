@@ -303,7 +303,8 @@ function createTemplate(englishStr, translatedStr, lang) {
     englishStr = rtrim(englishStr);
     translatedStr = rtrim(translatedStr);
     const translatedLines = translatedStr.split(LINE_BREAK);
-    const mathDictionary = getMathDictionary(englishStr, translatedStr);
+    const englishDictionary = getMathDictionary(englishStr, englishStr);
+    const translatedDictionary = getMathDictionary(englishStr, translatedStr);
 
     try {
         return {
@@ -311,14 +312,22 @@ function createTemplate(englishStr, translatedStr, lang) {
                 (line) => line.replace(MATH_REGEX, '__MATH__')
                     .replace(GRAPHIE_REGEX, '__GRAPHIE__')
                     .replace(WIDGET_REGEX, '__WIDGET__')),
-            mathMapping:
-                getMapping(englishStr, translatedStr, lang, MATH_REGEX,
-                    mathDictionary),
+            mathMapping: {
+                englishToTranslated:
+                    getMapping(englishStr, translatedStr, lang, MATH_REGEX,
+                        translatedDictionary),
+                // This will be used by populateTemplate to validate that the
+                // translation mapping in this template can be used to suggest
+                // a translation for another English string.
+                englishToEnglish:
+                    getMapping(englishStr, englishStr, 'en', MATH_REGEX,
+                        englishDictionary),
+            },
             graphieMapping:
                 getMapping(englishStr, translatedStr, lang, GRAPHIE_REGEX),
             widgetMapping:
                 getMapping(englishStr, translatedStr, lang, WIDGET_REGEX),
-            mathDictionary: mathDictionary,
+            mathDictionary: translatedDictionary,
         };
     } catch(e) {
         return e;
@@ -401,6 +410,29 @@ function populateTemplate(template, englishStr, lang) {
         return undefined;
     }
 
+    // We wish to validate that the math mapping in the template is appropriate
+    // to use for suggesting a translation for this English string.
+    if (template.mathMapping.englishToTranslated.length) {
+        // To that end we create an English to English math mapping for this
+        // string.
+        const englishDictionary = getMathDictionary(englishStr, englishStr);
+        const englishMapping = getMapping(
+            englishStr, englishStr, 'en', MATH_REGEX, englishDictionary);
+        // And verify that the math mapping is identical to the one in the
+        // template.
+        if (JSON.stringify(englishMapping) !== JSON.stringify(
+                template.mathMapping.englishToEnglish)) {
+            // Inappropriate mapping can result in math being altered between
+            // the English string and the suggested translation string.
+            // For example a template created from string '$4$ x $4$ y $5$'
+            // would have math mapping of [0, 0, 2], while the English string
+            // '$3$ x $8$ y $3$' would have [0, 1, 0], resulting in the invalid
+            // translation suggestion of '$3$ x $3$ y $3$'. To prevent this from
+            // happening we simply reject providing a translation suggestion.
+            return undefined;
+        }
+    }
+
     let maths = englishStr.match(MATH_REGEX) || [];
     const graphies = englishStr.match(GRAPHIE_REGEX) || [];
     const widgets = englishStr.match(WIDGET_REGEX) || [];
@@ -418,7 +450,7 @@ function populateTemplate(template, englishStr, lang) {
         const templateLine = template.lines[index];
 
         return templateLine.replace(/__MATH__/g, () =>
-            maths[template.mathMapping[mathIndex++]]
+            maths[template.mathMapping.englishToTranslated[mathIndex++]]
         ).replace(/__GRAPHIE__/g, () =>
             graphies[template.graphieMapping[graphieIndex++]]
         ).replace(/__WIDGET__/g, () =>

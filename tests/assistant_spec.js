@@ -321,21 +321,59 @@ describe('TranslationAssistant (math)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
+    it('should not work when math chunks are not reused', function() {
+        const allItems = [{
+            englishStr: '$4$ x $4$ y $5$',
+            translatedStr: '$4$ x $4$ y $5$',
+        }, {
+            englishStr: 'x is $4$, y is $4$, x/y is $1$',
+            translatedStr: 'y is $4$, x is $4$, x/y is $1$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: '$3$ x $8$ y $3$',
+            translatedStr: '',
+        }, {
+            englishStr: 'x is $4$, y is $2$, x/y is $2$',
+            translatedStr: '',
+        }];
+
+        const assistant = new TranslationAssistant(
+            allItems, getEnglishStr, getTranslation, lang);
+
+        const translation = assistant.suggest(itemsToTranslate);
+        assert.equal(translation[0][1], null);
+        assert.equal(translation[0][2], null);
+    });
+
     it('should work when math chunks are reused', function() {
         const allItems = [{
             englishStr: '**When counting by $5$s starting from $18$,  ' +
                 'which numbers will you say? **',
             translatedStr: '**Al contar de $5$ en $5$ empezando en $18$, ' +
                 '¿cuáles números dirás? **',
+        }, {
+            englishStr: '$4$ x $4$ y $5$',
+            translatedStr: '$4$ x $4$ y $5$',
+        }, {
+            englishStr: 'x is $4$, y is $4$, x/y is $1$',
+            translatedStr: 'y is $4$, x is $4$, x/y is $1$',
         }];
         const itemsToTranslate = [{
             englishStr: '**When counting by $5$s starting from $18$,  ' +
                 'which numbers will you say? **',
             translatedStr: '',
+        }, {
+            englishStr: '$8$ x $8$ y $3$',
+            translatedStr: '',
+        }, {
+            englishStr: 'x is $2$, y is $2$, x/y is $1$',
+            translatedStr: '',
         }];
         const translatedStrs = [
             '**Al contar de $5$ en $5$ empezando en $18$, ' +
-            '¿cuáles números dirás? **'];
+                '¿cuáles números dirás? **',
+            '$8$ x $8$ y $3$',
+            'y is $2$, x is $2$, x/y is $1$'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
