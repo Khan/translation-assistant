@@ -522,7 +522,7 @@ class TranslationAssistant {
         const {suggestionGroups, lang} = this;
 
         return itemsToTranslate.map((item) => {
-            const englishStr = this.getEnglishStr(item);
+            const englishStr = rtrim(this.getEnglishStr(item));
             const normalStr = stringToGroupKey(englishStr);
             const normalObj = JSON.parse(normalStr);
 
@@ -551,7 +551,7 @@ class TranslationAssistant {
 
                 if (template) {
                     const translatedStr = populateTemplate(
-                        template, this.getEnglishStr(item), lang);
+                        template, englishStr, lang);
                     return [item, translatedStr];
                 }
             }
@@ -606,7 +606,7 @@ class TranslationAssistant {
         const suggestionGroups = {};
 
         items.forEach((obj) => {
-            const key = stringToGroupKey(this.getEnglishStr(obj));
+            const key = stringToGroupKey(rtrim(this.getEnglishStr(obj)));
 
             if (suggestionGroups[key]) {
                 suggestionGroups[key].push(obj);
