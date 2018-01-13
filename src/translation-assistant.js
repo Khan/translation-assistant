@@ -13,6 +13,10 @@ const MATH_REGEX = /\$(\\\$|[^\$])+\$/g;
 // e.g. ![](web+graphie://ka-perseus-graphie.s3.amazonaws.com/542f2b4e297910eed545a5c29c3866918655bab4)
 const GRAPHIE_REGEX = /\!\[\]\([^)]+\)/g;
 
+// Matches image link strings,
+// e.g. 'https://ka-perseus-graphie.s3.amazonaws.com/e75c49cb5753492629016169933ab63af3b9f122.png
+const IMAGE_REGEX = /https:\/\/[^\s]+\.png/g;
+
 // Matches widget strings, e.g. [[☃ Expression 1]]
 const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
@@ -34,8 +38,8 @@ const LINE_BREAK = '\n\n';
  * The key string is a JSON string that looks like:
  * '{str:"Is __MATH__ equal to __MATH__",texts:[["red", "blue"],[]]}'
  *
- * The `str` property is the `str` parameter with math, graphies, and widgets
- * replaced with placeholders.  Also, we remove unimportant whitespace
+ * The `str` property is the `str` parameter with math, graphies, images, and
+ * widgets replaced with placeholders.  Also, we remove unimportant whitespace
  * differences on the item so that we can group strings with similar natural
  * language text.  We also disregard bold markup when determining a match.
  * This means that translators may have to add bold markup to the suggestion
@@ -74,6 +78,7 @@ function stringToGroupKey(str) {
     str = str
         .replace(MATH_REGEX, '__MATH__')
         .replace(GRAPHIE_REGEX, '__GRAPHIE__')
+        .replace(IMAGE_REGEX, '__IMAGE__')
         .replace(WIDGET_REGEX, '__WIDGET__')
         .replace(/__MATH__[\t ]*__WIDGET__/g, '__MATH__ __WIDGET__')
         .split(LINE_BREAK).map((line) => line.trim()).join(LINE_BREAK);
@@ -104,8 +109,9 @@ function stringToGroupKey(str) {
  * @param {String} englishStr The English source string.
  * @param {String} translatedStr The translation of the englishStr.
  * @param {String} lang ka_locale of translatedStr.
- * @param {RegExp} findRegex A regex that matches math, graphies, or widgets.
- *        Use one of MATH_REGEX, GRAPHIE_REGEX, or WIDGET_REGEX.
+ * @param {RegExp} findRegex A regex that matches math, graphies, images, or
+ *        widgets. Use one of MATH_REGEX, GRAPHIE_REGEX, IMAGE_REGEX, or
+ *        WIDGET_REGEX.
  * @param {Object} [mathDictionary] English to translated string mapping for
  *        for strings inside \text{} and \textbf{} blocks.
  * @returns {Array} An array representing the mapping.
@@ -139,11 +145,13 @@ function getMapping(
                 throw new Error('math doesn\'t match');
             } else if (findRegex === GRAPHIE_REGEX) {
                 throw new Error('graphies don\'t match');
+            } else if (findRegex === IMAGE_REGEX) {
+                throw new Error('image links don\'t match');
             } else if (findRegex === WIDGET_REGEX) {
                 throw new Error('widgets don\'t match');
             } else {
                 throw new Error('the only acceptable values for getFunc are ' +
-                    'getMaths, getGraphies, and getWdigets');
+                    'getMaths, getGraphies, getImages, and getWdigets');
             }
         }
         mapping[outputIndex] = inputIndex;
@@ -311,6 +319,7 @@ function createTemplate(englishStr, translatedStr, lang) {
             lines: translatedLines.map(
                 (line) => line.replace(MATH_REGEX, '__MATH__')
                     .replace(GRAPHIE_REGEX, '__GRAPHIE__')
+                    .replace(IMAGE_REGEX, '__IMAGE__')
                     .replace(WIDGET_REGEX, '__WIDGET__')),
             mathMapping: {
                 englishToTranslated:
@@ -325,6 +334,8 @@ function createTemplate(englishStr, translatedStr, lang) {
             },
             graphieMapping:
                 getMapping(englishStr, translatedStr, lang, GRAPHIE_REGEX),
+            imageMapping:
+                getMapping(englishStr, translatedStr, lang, IMAGE_REGEX),
             widgetMapping:
                 getMapping(englishStr, translatedStr, lang, WIDGET_REGEX),
             mathDictionary: translatedDictionary,
@@ -435,10 +446,12 @@ function populateTemplate(template, englishStr, lang) {
 
     let maths = englishStr.match(MATH_REGEX) || [];
     const graphies = englishStr.match(GRAPHIE_REGEX) || [];
+    const images = englishStr.match(IMAGE_REGEX) || [];
     const widgets = englishStr.match(WIDGET_REGEX) || [];
 
     let mathIndex = 0;
     let graphieIndex = 0;
+    let imageIndex = 0;
     let widgetIndex = 0;
 
     maths = maths.map((math) => {
@@ -453,6 +466,8 @@ function populateTemplate(template, englishStr, lang) {
             maths[template.mathMapping.englishToTranslated[mathIndex++]]
         ).replace(/__GRAPHIE__/g, () =>
             graphies[template.graphieMapping[graphieIndex++]]
+        ).replace(/__IMAGE__/g, () =>
+            images[template.imageMapping[imageIndex++]]
         ).replace(/__WIDGET__/g, () =>
             widgets[template.widgetMapping[widgetIndex++]]
         );
@@ -526,9 +541,10 @@ class TranslationAssistant {
             const normalStr = stringToGroupKey(englishStr);
             const normalObj = JSON.parse(normalStr);
 
-            // Translate items that are only math, a graphie, or a widget.
-            // TODO(kevinb) handle multiple non-nl_text items
-            if (/^(__MATH__|__GRAPHIE__|__WIDGET__)$/.test(normalObj.str)) {
+            // Translate items that are only math, a graphie, an image, or a
+            // widget. TODO(kevinb) handle multiple non-nl_text items
+            if (/^(__MATH__|__GRAPHIE__|__IMAGE__|__WIDGET__)$/
+                    .test(normalObj.str)) {
                 if (normalObj.str === '__MATH__') {
                     // Only translate the math if it doesn't include any
                     // natural language text in \text and \textbf commands.

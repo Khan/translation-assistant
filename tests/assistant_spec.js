@@ -26,6 +26,23 @@ const graphie4 = makeGraphie();
 const graphie5 = makeGraphie();
 const graphie6 = makeGraphie();
 
+/**
+ * Return a fake image link string.
+ * @returns {String} A fake image link string.
+ */
+function makeImageLink() {
+    const baseURL = 'https://ka-perseus-graphie.s3.amazonaws.com';
+    const id = Date.now() + (1000 * Math.random() | 0);
+    return `${baseURL}/${id}.png`;
+}
+
+const image1 = makeImageLink();
+const image2 = makeImageLink();
+const image3 = makeImageLink();
+const image4 = makeImageLink();
+const image5 = makeImageLink();
+const image6 = makeImageLink();
+
 const getEnglishStr = (item) => item.englishStr;
 const getTranslation = (item) => item.translatedStr;
 const lang = 'fr';
@@ -191,6 +208,21 @@ describe('TranslationAssistant', function() {
                 translatedStr: '',
             }];
             const translatedStr = [graphie, null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStr);
+        });
+
+        it('should return the same image link', function() {
+            const imageLink = makeImageLink();
+            const allItems = [];
+            const itemsToTranslate = [{
+                englishStr: imageLink,
+                translatedStr: '',
+            }, {
+                englishStr: 'hello',
+                translatedStr: '',
+            }];
+            const translatedStr = [imageLink, null];
 
             assertSuggestions(allItems, itemsToTranslate, translatedStr);
         });
@@ -475,6 +507,55 @@ describe('TranslationAssistant (graphie)', function() {
         }];
 
         assertSuggestions(allItems, itemsToTranslate, [graphie2]);
+    });
+});
+
+describe('TranslationAssistant (image links)', function() {
+    it('should handle multiple image links on multiple lines', function() {
+        const allItems = [{
+            englishStr: `simplify ${image1}, answer ${image2}\n\n` +
+                `hints: ${image3}`,
+            translatedStr: `simplifyz ${image1}, answerz ${image2}\n\n` +
+                `hintz: ${image3}`,
+        }];
+        const itemsToTranslate = [{
+            englishStr: `simplify ${image4}, answer ${image5}\n\n` +
+                `hints: ${image6}`,
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            `simplifyz ${image4}, answerz ${image5}\n\n` +
+            `hintz: ${image6}`,
+        ]);
+    });
+
+    it('should handle translations that re-order image links', function() {
+        const allItems = [{
+            englishStr: `simplify ${image1}, answer ${image2}`,
+            translatedStr: `answerz ${image2}, simplifyz ${image1}`,
+        }];
+        const itemsToTranslate = [{
+            englishStr: `simplify ${image3}, answer ${image4}`,
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            `answerz ${image4}, simplifyz ${image3}`,
+        ]);
+    });
+
+    it('should handle strings that are only image links', function() {
+        const allItems = [{
+            englishStr: image1,
+            translatedStr: image1,
+        }];
+        const itemsToTranslate = [{
+            englishStr: image2,
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [image2]);
     });
 });
 
