@@ -13,9 +13,10 @@ const MATH_REGEX = /\$(\\\$|[^\$])+\$/g;
 // e.g. ![](web+graphie://ka-perseus-graphie.s3.amazonaws.com/542f2b4e297910eed545a5c29c3866918655bab4)
 const GRAPHIE_REGEX = /\!\[\]\([^)]+\)/g;
 
-// Matches image link strings,
-// e.g. 'https://ka-perseus-graphie.s3.amazonaws.com/e75c49cb5753492629016169933ab63af3b9f122.png
-const IMAGE_REGEX = /https:\/\/[^\s]+\.png/g;
+// Matches pure image and graphie link strings,
+// e.g. https://ka-perseus-graphie.s3.amazonaws.com/e75c49cb5753492629016169933ab63af3b9f122.png
+// or web+graphie://ka-perseus-graphie.s3.amazonaws.com/542f2b4e297910eed545a5c29c3866918655bab4
+const IMAGE_REGEX = /https:[^\s]+\.png|web\+graphie:[a-z0-9\.\-/]+(?=[\s,]|$)/g;
 
 // Matches widget strings, e.g. [[☃ Expression 1]]
 const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
@@ -542,7 +543,8 @@ class TranslationAssistant {
             const normalObj = JSON.parse(normalStr);
 
             // Translate items that are only math, a graphie, an image, or a
-            // widget. TODO(kevinb) handle multiple non-nl_text items
+            // widget.
+            // TODO(kevinb) handle multiple non-nl_text items
             if (/^(__MATH__|__GRAPHIE__|__IMAGE__|__WIDGET__)$/
                     .test(normalObj.str)) {
                 if (normalObj.str === '__MATH__') {

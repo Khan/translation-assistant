@@ -43,6 +43,23 @@ const image4 = makeImageLink();
 const image5 = makeImageLink();
 const image6 = makeImageLink();
 
+/**
+ * Return a fake graphie link string.
+ * @returns {String} A fake graphie link string.
+ */
+function makeGraphieLink() {
+    const baseURL = 'web+graphie://ka-perseus-graphie.s3.amazonaws.com';
+    const id = Date.now() + (1000 * Math.random() | 0);
+    return `${baseURL}/${id}`;
+}
+
+const graphieLink1 = makeGraphieLink();
+const graphieLink2 = makeGraphieLink();
+const graphieLink3 = makeGraphieLink();
+const graphieLink4 = makeGraphieLink();
+const graphieLink5 = makeGraphieLink();
+const graphieLink6 = makeGraphieLink();
+
 const getEnglishStr = (item) => item.englishStr;
 const getTranslation = (item) => item.translatedStr;
 const lang = 'fr';
@@ -462,7 +479,7 @@ describe('TranslationAssistant (math)', function() {
 });
 
 describe('TranslationAssistant (graphie)', function() {
-    it('should handle multiple math on multiple lines', function() {
+    it('should handle multiple graphies on multiple lines', function() {
         const allItems = [{
             englishStr: `simplify ${graphie1}, answer ${graphie2}\n\n` +
                 `hints: ${graphie3}`,
@@ -510,7 +527,7 @@ describe('TranslationAssistant (graphie)', function() {
     });
 });
 
-describe('TranslationAssistant (image links)', function() {
+describe('TranslationAssistant (image and graphie links)', function() {
     it('should handle multiple image links on multiple lines', function() {
         const allItems = [{
             englishStr: `simplify ${image1}, answer ${image2}\n\n` +
@@ -556,6 +573,53 @@ describe('TranslationAssistant (image links)', function() {
         }];
 
         assertSuggestions(allItems, itemsToTranslate, [image2]);
+    });
+
+    it('should handle multiple graphie links on multiple lines', function() {
+        const allItems = [{
+            englishStr: `simplify ${graphieLink1} to ${graphieLink2}\n\n` +
+                `hints: ${graphieLink3}`,
+            translatedStr: `simplifyz ${graphieLink1} toz ${graphieLink2}\n\n` +
+                `hintz: ${graphieLink3}`,
+        }];
+        const itemsToTranslate = [{
+            englishStr: `simplify ${graphieLink4} to ${graphieLink5}\n\n` +
+                `hints: ${graphieLink6}`,
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            `simplifyz ${graphieLink4} toz ${graphieLink5}\n\n` +
+            `hintz: ${graphieLink6}`,
+        ]);
+    });
+
+    it('should handle translations that re-order graphie links', function() {
+        const allItems = [{
+            englishStr: `simplify ${graphieLink1}, answer ${graphieLink2}`,
+            translatedStr: `answerz ${graphieLink2}, simplifyz ${graphieLink1}`,
+        }];
+        const itemsToTranslate = [{
+            englishStr: `simplify ${graphieLink3}, answer ${graphieLink4}`,
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            `answerz ${graphieLink4}, simplifyz ${graphieLink3}`,
+        ]);
+    });
+
+    it('should handle strings that are only graphie links', function() {
+        const allItems = [{
+            englishStr: graphieLink1,
+            translatedStr: graphieLink1,
+        }];
+        const itemsToTranslate = [{
+            englishStr: graphieLink2,
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [graphieLink2]);
     });
 });
 
