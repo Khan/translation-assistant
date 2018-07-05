@@ -496,10 +496,9 @@ describe('TranslationAssistant (math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
 
-    // TODO(danielhollas):This we need to decide
-    /*
-    it('should not translate decimal point if not in translation?', function() {
-        const lang = 'fr';
+    // TODO(danielhollas): This we need to decide
+    it('should not offer translations of math is not translated properly', function() {
+        const lang = 'cs';
         const allItems = [{
             englishStr: 'simplify $2.3$',
             translatedStr: 'simplifyz $2.3$',
@@ -509,10 +508,10 @@ describe('TranslationAssistant (math-translate)', function() {
             translatedStr: '',
         }];
         const translatedStrs = [null];
+        //const translatedStrs = ['simplifyz $2{,}9$'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
-    */
 
     it('should not translate decimal point to comma for ko', function() {
         const lang = 'ko';
