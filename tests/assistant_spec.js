@@ -1013,6 +1013,22 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         ]);
     });
 
+    it('should handle special characters inside \\textbf', function() {
+        const allItems = [{
+            englishStr: '$6 \\textbf{( . )}$',
+            translatedStr: '$6 \\textbf{)}$',
+        }];
+
+        const itemsToTranslate = [{
+            englishStr: '$5 \\textbf{( . )}$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            '$5 \\textbf{)}$',
+        ]);
+    });
+
 });
 
 describe('TranslationAssistant **bold**', function() {
