@@ -23,6 +23,7 @@ const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
 // TODO(michaelpolyak): Add support for other \text commands:
 // https://github.com/Khan/KaTeX/blob/3280652bd68973ad9edd73273137049324c5cab9/src/functions.js#L50
+// Comment(danhollas): Those other commands are rare/non-existent in KA corpus
 const TEXT_REGEX = /\\text\s*{([^}]*)}/g;
 const TEXTBF_REGEX = /\\textbf\s*{([^}]*)}/g;
 
@@ -130,12 +131,17 @@ function getMapping(
 
     if (findRegex === MATH_REGEX) {
         inputs = inputs.map(
+            (input) => translateMath(input, lang));
+        inputs = inputs.map(
             (input) => replaceTextInMath(input, mathDictionary));
     }
 
     const mapping = [];
 
     outputs.forEach((output, outputIndex) => {
+        // TODO(danielhollas): Should the following be here?
+        // e.g. should we automatically translate to decimal commas
+        // even if original string was not?
         if (findRegex === MATH_REGEX) {
             output = translateMath(output, lang);
         }
@@ -355,13 +361,34 @@ function createTemplate(englishStr, translatedStr, lang) {
  * @returns {string} The translated math expression.
  *
  * TODO(kevinb): handle \text{} inside math.
+ * TODO(danielhollas): implement locale specific translations according to:
+ * https://docs.google.com/spreadsheets/d/1qgi-KjumcZ6yru19U5weqZK9TosRlTdLZqbXbABBJoQ/edit#gid=0
  */
 function translateMath(math, lang) {
-    if (lang === 'pt') {
-        return math.replace(/\\sin/g, '\\operatorname\{sen\}');
-    } else {
-        return math;
-    }
+
+    const mathTranslations = [
+         // division sign as a colon
+         {langs: ['cs'],
+            regex: /\\div/g, replace: '\\mathbin{:}'},
+         // latin trig functions
+         {langs: ['es', 'it', 'pt', 'pt-pt'],
+            regex: /\\sin/g, replace: '\\operatorname\{sen\}'},
+         // Decimal comma
+         {langs: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'ro',
+           'nl', 'hu', 'az', 'it'],
+            regex: /([0-9]).([0-9])/g, replace: '$1{,}$2'},
+         // multiplication sign as a dot
+         {langs: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu'],
+            regex: /\\mult/g, replace: '\\cdot'},
+    ];
+
+    mathTranslations.forEach(function(element) {
+        if (element.langs.includes(lang)) {
+            math = math.replace(element.regex, element.replace);
+        }
+    });
+
+    return math;
 }
 
 /**
@@ -495,10 +522,10 @@ class TranslationAssistant {
      * @returns {void}
      */
     constructor(allItems, getEnglishStr, getTranslation, lang) {
+        this.lang = lang;
         this.getEnglishStr = getEnglishStr;
         this.getTranslation = getTranslation;
         this.suggestionGroups = this.getSuggestionGroups(allItems);
-        this.lang = lang;
     }
 
     /**

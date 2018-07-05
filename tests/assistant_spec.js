@@ -62,7 +62,7 @@ const graphieLink6 = makeGraphieLink();
 
 const getEnglishStr = (item) => item.englishStr;
 const getTranslation = (item) => item.translatedStr;
-const lang = 'fr';
+const lang = 'cs';
 
 /**
  * Assert that the suggested translations match the translations.
@@ -76,9 +76,10 @@ const lang = 'fr';
  *        there is no suggested translation expected for the item.
  * @returns {void}
  */
-function assertSuggestions(allItems, itemsToTranslate, translatedStrs) {
+function assertSuggestions(allItems, itemsToTranslate, translatedStrs,
+        lg = lang) {
     const assistant =
-        new TranslationAssistant(allItems, getEnglishStr, getTranslation, lang);
+        new TranslationAssistant(allItems, getEnglishStr, getTranslation, lg);
 
     const suggestions = assistant.suggest(itemsToTranslate);
 
@@ -475,6 +476,102 @@ describe('TranslationAssistant (math)', function() {
         const translatedStrs = [null];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+});
+
+//TODO(danielhollas): Add more tests various locales
+describe('TranslationAssistant (math-translate)', function() {
+    it('should translate decimal point to comma for fr locale', function() {
+        const lang = 'fr';
+        const allItems = [{
+            englishStr: 'simplify $2.3$',
+            translatedStr: 'simplifyz $2{,}3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2.9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2{,}9$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    // TODO(danielhollas):This we need to decide
+    /*
+    it('should not translate decimal point if not in translation?', function() {
+        const lang = 'fr';
+        const allItems = [{
+            englishStr: 'simplify $2.3$',
+            translatedStr: 'simplifyz $2.3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2.9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = [null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+    */
+
+    it('should not translate decimal point to comma for ko', function() {
+        const lang = 'ko';
+        const allItems = [{
+            englishStr: 'simplify $2.3$',
+            translatedStr: 'simplifyz $2{,}3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2.9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = [null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should translate \\mult to \\cdot for cs locale', function() {
+        const lang = 'cs';
+        const allItems = [{
+            englishStr: 'simplify $2 \\mult 3$',
+            translatedStr: 'simplifyz $2 \\cdot 3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2 \\mult 9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2 \\cdot 9$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should translate \\div to \\mathbin{:} for cs locale', function() {
+        const lang = 'cs';
+        const allItems = [{
+            englishStr: 'simplify $2 \\div 3$',
+            translatedStr: 'simplifyz $2 \\mathbin{:} 3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2 \\div 9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2 \\mathbin{:} 9$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should translate \\sin to \\sen for pt locale', function() {
+        const lang = 'pt';
+        const allItems = [{
+            englishStr: 'from $\\sin \\theta$ to $3$',
+            translatedStr: 'fromy $\\operatorname{sen} \\theta$ till $3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'from $\\sin \\theta$ to $5$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['fromy $\\operatorname{sen} \\theta$ till $5$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
 });
 
