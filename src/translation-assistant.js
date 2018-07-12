@@ -375,14 +375,16 @@ function rtrim(str) {
 }
 
 /**
+ * Escape any string to create regular expression
+ *
  * See: https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript/
  *
  * @param {String} str A string to be matched in regular expr
  * @returns {String} The string with escaped characters
  */
-RegExp.escape = function(str) {
+function escapeForRegex(str) {
     return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-};
+}
 
 /**
  * Translate the text inside \\text{} and \\textbf blocks.
@@ -404,7 +406,7 @@ function replaceTextInMath(englishMath, dict) {
 
     for (const [englishText, translatedText] of Object.entries(dict)) {
         textCommands.forEach((cmd) => {
-            const escapedEnglishText = RegExp.escape(englishText);
+            const escapedEnglishText = escapeForRegex(englishText);
             const regex = new RegExp(`\\\\${cmd}(\\s*){${escapedEnglishText}}`,
                   'g');
             // make sure the spacing matches in the replacement
