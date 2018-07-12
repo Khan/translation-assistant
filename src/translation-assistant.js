@@ -140,7 +140,7 @@ function getMapping(
 
     outputs.forEach((output, outputIndex) => {
         // TODO(danielhollas): Should the following be here?
-        // Should we automatically translate math even if translatedStr 
+        // i.e. should we automatically translate math even if translatedStr
         // was not translated according to our locale rules?
         //if (findRegex === MATH_REGEX) {
         //    output = translateMath(output, lang);

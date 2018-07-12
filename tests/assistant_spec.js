@@ -497,7 +497,7 @@ describe('TranslationAssistant (math-translate)', function() {
     });
 
     // TODO(danielhollas): This we need to decide
-    it('should not offer translations of math is not translated properly', function() {
+    it('should not suggest ST if math is not translated properly', function() {
         const lang = 'cs';
         const allItems = [{
             englishStr: 'simplify $2.3$',
