@@ -996,6 +996,39 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
             translated: '',
         }], ['$\\textbf{Fläche}} = 12 \\textbf { Quadratzentimeter}$']);
     });
+
+    it('should handle special characters inside \\text', function() {
+        const allItems = [{
+            englishStr: '$6 \\text{( . )}$',
+            translatedStr: '$6 \\text{)}$',
+        }];
+
+        const itemsToTranslate = [{
+            englishStr: '$5 \\text{( . )}$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            '$5 \\text{)}$',
+        ]);
+    });
+
+    it('should handle special characters inside \\textbf', function() {
+        const allItems = [{
+            englishStr: '$6 \\textbf{( . )}$',
+            translatedStr: '$6 \\textbf{)}$',
+        }];
+
+        const itemsToTranslate = [{
+            englishStr: '$5 \\textbf{( . )}$',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [
+            '$5 \\textbf{)}$',
+        ]);
+    });
+
 });
 
 describe('TranslationAssistant **bold**', function() {
