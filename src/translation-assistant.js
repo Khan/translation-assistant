@@ -139,12 +139,14 @@ function getMapping(
     const mapping = [];
 
     outputs.forEach((output, outputIndex) => {
-        // TODO(danielhollas): Should the following be here?
-        // i.e. should we automatically translate math even if translatedStr
-        // was not translated according to our locale rules?
-        //if (findRegex === MATH_REGEX) {
-        //    output = translateMath(output, lang);
-        //}
+        /*
+         * TODO(danielhollas): Should the following be here?
+         * i.e. should we automatically translate math even if translatedStr
+         * was not translated according to our locale rules?
+        if (findRegex === MATH_REGEX) {
+            output = translateMath(output, lang);
+        }
+        */
 
         const inputIndex = inputs.indexOf(output);
         if (inputIndex === -1) {
@@ -207,13 +209,14 @@ function allMatches(text, regex, callback) {
  *
  * @param {String} englishStr The English source string.
  * @param {String} translatedStr The translation of the englishStr.
+ * @param {String} lang Locale, needed for Math translation.
  * @returns {Object} The English to translated string mapping for strings inside
  *          \text{} and \textbf{} blocks.
  *
  * TODO(kevinb): automatically handle \text{} blocks containing numbers only.
  */
-function getMathDictionary(englishStr, translatedStr) {
-    const inputs = englishStr.match(MATH_REGEX) || [];
+function getMathDictionary(englishStr, translatedStr, lang) {
+    let inputs = englishStr.match(MATH_REGEX) || [];
     const outputs = translatedStr.match(MATH_REGEX) || [];
 
     const inputMap = {};
@@ -223,6 +226,9 @@ function getMathDictionary(englishStr, translatedStr) {
         [TEXT_REGEX, '__TEXT__'],
         [TEXTBF_REGEX, '__TEXTBF__'],
     ];
+
+    inputs = inputs.map(
+        (input) => translateMath(input, lang));
 
     inputs.forEach((input) => {
         let normalized = input;
@@ -318,8 +324,9 @@ function createTemplate(englishStr, translatedStr, lang) {
     englishStr = rtrim(englishStr);
     translatedStr = rtrim(translatedStr);
     const translatedLines = translatedStr.split(LINE_BREAK);
-    const englishDictionary = getMathDictionary(englishStr, englishStr);
-    const translatedDictionary = getMathDictionary(englishStr, translatedStr);
+    const englishDictionary = getMathDictionary(englishStr, englishStr, lang);
+    const translatedDictionary = getMathDictionary(
+        englishStr, translatedStr, lang);
 
     try {
         return {
@@ -369,7 +376,7 @@ function translateMath(math, lang) {
 
     const mathTranslations = [
          // division sign as a colon
-         {langs: ['cs'],
+         {langs: ['cs', 'de'],
             regex: /\\div/g, replace: '\\mathbin{:}'},
          // latin trig functions
          {langs: ['es', 'it', 'pt', 'pt-pt'],
@@ -455,7 +462,8 @@ function populateTemplate(template, englishStr, lang) {
     if (template.mathMapping.englishToTranslated.length) {
         // To that end we create an English to English math mapping for this
         // string.
-        const englishDictionary = getMathDictionary(englishStr, englishStr);
+        const englishDictionary = getMathDictionary(
+            englishStr, englishStr, lang);
         const englishMapping = getMapping(
             englishStr, englishStr, 'en', MATH_REGEX, englishDictionary);
         // And verify that the math mapping is identical to the one in the
