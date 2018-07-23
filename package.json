@@ -6,20 +6,20 @@
   "scripts": {
     "lint": "eslint src tests",
     "test": "mocha --compilers js:babel/register tests",
-    "build": "babel --loose src/translation-assistant.js -o lib/translation-assistant.js",
+    "build": "babel --loose all src/translation-assistant.js -o lib/translation-assistant.js",
     "watch_test": "mocha --watch --compilers js:babel/register tests",
-    "watch_build": "babel --loose --watch src/translation-assistant.js -o lib/translation-assistant.js"
+    "watch_build": "babel --loose all --watch src/translation-assistant.js -o lib/translation-assistant.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Khan/intelligent-tm"
+    "url": "https://github.com/Khan/translation-assistant"
   },
   "author": "Kevin Barabash <kevinbarabash@khanacademy.org>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Khan/intelligent-tm/issues"
+    "url": "https://github.com/Khan/translation-assistant/issues"
   },
-  "homepage": "https://github.com/Khan/intelligent-tm",
+  "homepage": "https://github.com/Khan/translation-assistant",
   "devDependencies": {
     "babel": "^5.8.23",
     "babel-core": "^5.8.25",

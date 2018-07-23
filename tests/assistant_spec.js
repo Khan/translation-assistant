@@ -62,7 +62,6 @@ const graphieLink6 = makeGraphieLink();
 
 const getEnglishStr = (item) => item.englishStr;
 const getTranslation = (item) => item.translatedStr;
-const lang = 'fr';
 
 /**
  * Assert that the suggested translations match the translations.
@@ -74,9 +73,11 @@ const lang = 'fr';
  * @param {Array<String|null>} translatedStrs List of the expected translated
  *        strings for items, if an expected translation is `null` it means that
  *        there is no suggested translation expected for the item.
+ * @param {String} lang Locale for translation of math notation
  * @returns {void}
  */
-function assertSuggestions(allItems, itemsToTranslate, translatedStrs) {
+function assertSuggestions(allItems, itemsToTranslate, translatedStrs,
+        lang = 'cs') {
     const assistant =
         new TranslationAssistant(allItems, getEnglishStr, getTranslation, lang);
 
@@ -406,7 +407,7 @@ describe('TranslationAssistant (math)', function() {
         }];
 
         const assistant = new TranslationAssistant(
-            allItems, getEnglishStr, getTranslation, lang);
+            allItems, getEnglishStr, getTranslation);
 
         const translation = assistant.suggest(itemsToTranslate);
         assert.equal(translation[0][1], null);
@@ -475,6 +476,175 @@ describe('TranslationAssistant (math)', function() {
         const translatedStrs = [null];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+});
+
+describe('TranslationAssistant (math-translate)', function() {
+    it('should translate decimal point to comma for fr locale', function() {
+        const allItems = [{
+            englishStr: 'simplify $2.3$',
+            translatedStr: 'simplifyz $2{,}3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2.9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2{,}9$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'fr');
+    });
+
+    it('should translate math alone', function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3 \\mult x = 9.9$', translatedStr: ''},
+            {englishStr: 'hello', translatedStr: ''},
+        ];
+        const translatedStrs = ['$3 \\cdot x = 9{,}9$', null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should translate multiple math notations at once', function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3 \\mult x = 9.9 \\div 3$', translatedStr: ''},
+        ];
+        const translatedStrs = ['$3 \\cdot x = 9{,}9 \\mathbin{:} 3$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'de');
+    });
+
+    it('should translate multiple decimals', function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3 \\mult x = 9.9 \\div 3.3$', translatedStr: ''},
+        ];
+        const translatedStrs = ['$3 \\cdot x = 9{,}9 \\mathbin{:} 3{,}3$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'de');
+    });
+
+    it('should translate math with \\text', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5.1$',
+            translatedStr: 'simplifyz $\\text{rouge} = 5{,}1$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\text{red} = 20.4$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $3 * \\text{rouge} = 20{,}4$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'fr');
+    });
+
+    it('should translate math with \\textbf', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\textbf{red} = 5.1$',
+            translatedStr: 'simplifyz $\\textbf{rouge} = 5{,}1$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 * \\textbf{red} = 20.4$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $3 * \\textbf{rouge} = 20{,}4$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'fr');
+    });
+
+    it('should translate math with \\text{} and \\textbf{}', function() {
+        const allItems = [{
+            englishStr: 'simplify $\\text{red} = 5 \\mult \\textbf{blue}$',
+            translatedStr: 'simplifyz $\\text{azul} = 5 \\cdot \\textbf{roja}$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $3 \\text{red} = 2 \\div \\textbf{blue}$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $3 \\textbf{red} = 2 \\div \\text{blue}$',
+            translatedStr: '',
+        }];
+
+        // Even though "red" in Spanish should be "roja", smart translations
+        // doesn't know that.  The template built from allItems will contain a
+        // mathDictionary which maps "red" to "azul" and "blue" to "roja".
+        assertSuggestions(allItems, itemsToTranslate, [
+            'simplifyz $3 \\text{azul} = 2 \\mathbin{:} \\textbf{roja}$',
+            'simplifyz $3 \\textbf{azul} = 2 \\mathbin{:} \\text{roja}$',
+        ]);
+    });
+
+    it('should not suggest ST if math is not translated properly', function() {
+        const allItems = [{
+            englishStr: 'simplify $2.3$',
+            translatedStr: 'simplifyz $2.3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2.9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = [null];
+        //const translatedStrs = ['simplifyz $2{,}9$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should not translate decimal point to comma for ko', function() {
+        const allItems = [{
+            englishStr: 'simplify $2.3$',
+            translatedStr: 'simplifyz $2{,}3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2.9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = [null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'ko');
+    });
+
+    it('should translate \\mult to \\cdot for cs locale', function() {
+        const allItems = [{
+            englishStr: 'simplify $2 \\mult 3 \\mult 2$',
+            translatedStr: 'simplifyz $2 \\cdot 3 \\cdot 2$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2 \\mult 9 \\mult 9$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2 \\cdot 9 \\cdot 9$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should translate \\div to \\mathbin{:} for de locale', function() {
+        const allItems = [{
+            englishStr: 'simplify $2 \\div 3$',
+            translatedStr: 'simplifyz $2 \\mathbin{:} 3$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2 \\div 9 \\div 3$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2 \\mathbin{:} 9 \\mathbin{:} 3$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'de');
+    });
+
+    it('should translate \\sin to \\sen for pt locale', function() {
+        const allItems = [{
+            englishStr: 'from $\\sin \\theta$ to $3\\sin$',
+            translatedStr: 'fr $\\operatorname{sen} \\theta$ till ' +
+                           '$3\\operatorname{sen}$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'from $\\sin \\theta$ to $5$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['fr $\\operatorname{sen} \\theta$ till $5$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
     });
 });
 
@@ -947,7 +1117,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         }];
 
         const assistant = new TranslationAssistant(
-            allItems, getEnglishStr, getTranslation, lang);
+            allItems, getEnglishStr, getTranslation);
 
         const translation = assistant.suggest(itemsToTranslate);
         assert.equal(translation[0][1], null);

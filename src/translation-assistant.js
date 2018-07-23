@@ -23,6 +23,7 @@ const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
 // TODO(michaelpolyak): Add support for other \text commands:
 // https://github.com/Khan/KaTeX/blob/3280652bd68973ad9edd73273137049324c5cab9/src/functions.js#L50
+// NOTE(danhollas): Those other commands are rare/non-existent in KA corpus
 const TEXT_REGEX = /\\text\s*{([^}]*)}/g;
 const TEXTBF_REGEX = /\\textbf\s*{([^}]*)}/g;
 
@@ -129,16 +130,20 @@ function getMapping(
     const outputs = translatedStr.match(findRegex) || [];
 
     if (findRegex === MATH_REGEX) {
-        inputs = inputs.map(
-            (input) => replaceTextInMath(input, mathDictionary));
+        inputs = inputs
+            .map((input) => translateMath(input, lang))
+            .map((input) => replaceTextInMath(input, mathDictionary));
     }
 
     const mapping = [];
 
     outputs.forEach((output, outputIndex) => {
-        if (findRegex === MATH_REGEX) {
-            output = translateMath(output, lang);
-        }
+
+        // NOTE(danielhollas): Currently, we will not offer smart translations
+        // if the user did not translate math according to our locale rules
+        // if (findRegex === MATH_REGEX) {
+        //     output = translateMath(output, lang);
+        // }
 
         const inputIndex = inputs.indexOf(output);
         if (inputIndex === -1) {
@@ -201,13 +206,14 @@ function allMatches(text, regex, callback) {
  *
  * @param {String} englishStr The English source string.
  * @param {String} translatedStr The translation of the englishStr.
+ * @param {String} lang Locale, needed for Math translation.
  * @returns {Object} The English to translated string mapping for strings inside
  *          \text{} and \textbf{} blocks.
  *
  * TODO(kevinb): automatically handle \text{} blocks containing numbers only.
  */
-function getMathDictionary(englishStr, translatedStr) {
-    const inputs = englishStr.match(MATH_REGEX) || [];
+function getMathDictionary(englishStr, translatedStr, lang) {
+    let inputs = englishStr.match(MATH_REGEX) || [];
     const outputs = translatedStr.match(MATH_REGEX) || [];
 
     const inputMap = {};
@@ -217,6 +223,9 @@ function getMathDictionary(englishStr, translatedStr) {
         [TEXT_REGEX, '__TEXT__'],
         [TEXTBF_REGEX, '__TEXTBF__'],
     ];
+
+    inputs = inputs.map(
+        (input) => translateMath(input, lang));
 
     inputs.forEach((input) => {
         let normalized = input;
@@ -312,8 +321,9 @@ function createTemplate(englishStr, translatedStr, lang) {
     englishStr = rtrim(englishStr);
     translatedStr = rtrim(translatedStr);
     const translatedLines = translatedStr.split(LINE_BREAK);
-    const englishDictionary = getMathDictionary(englishStr, englishStr);
-    const translatedDictionary = getMathDictionary(englishStr, translatedStr);
+    const englishDictionary = getMathDictionary(englishStr, englishStr, lang);
+    const translatedDictionary = getMathDictionary(
+        englishStr, translatedStr, lang);
 
     try {
         return {
@@ -347,21 +357,45 @@ function createTemplate(englishStr, translatedStr, lang) {
 }
 
 /**
- * Handles any per language special case translations, e.g. Portuguese uses
- * `sen` instead of `sin`.
+ * Handles any per language special case translations
+ * e.g. Portuguese uses `sen` instead of `sin`,
+ * many languages use decimal comma etc.
+ *
+ * The list of all per-locale math notations is in this table:
+ * https://docs.google.com/spreadsheets/d/1qgi-KjumcZ6yru19U5weqZK9TosRlTdLZqbXbABBJoQ/edit#gid=0
+ *
+ * TODO(danielhollas): For now only the obvious cases were implemented.
+ * TODO(danielhollas): Need to update this when new langs join translations
  *
  * @param {string} math A math expression to translate for locale.
  * @param {string} lang The locale of the translation language.
  * @returns {string} The translated math expression.
- *
- * TODO(kevinb): handle \text{} inside math.
  */
 function translateMath(math, lang) {
-    if (lang === 'pt') {
-        return math.replace(/\\sin/g, '\\operatorname\{sen\}');
-    } else {
-        return math;
-    }
+
+    const mathTranslations = [
+         // division sign as a colon
+         {langs: ['cs', 'de'],
+            regex: /\\div/g, replace: '\\mathbin{:}'},
+         // latin trig functions
+         {langs: ['es', 'it', 'pt', 'pt-pt'],
+            regex: /\\sin/g, replace: '\\operatorname\{sen\}'},
+         // Decimal comma
+         {langs: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'ro',
+           'nl', 'hu', 'az', 'it'],
+            regex: /([0-9]).([0-9])/g, replace: '$1{,}$2'},
+         // multiplication sign as a dot
+         {langs: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu'],
+            regex: /\\mult/g, replace: '\\cdot'},
+    ];
+
+    mathTranslations.forEach(function(element) {
+        if (element.langs.includes(lang)) {
+            math = math.replace(element.regex, element.replace);
+        }
+    });
+
+    return math;
 }
 
 /**
@@ -441,7 +475,8 @@ function populateTemplate(template, englishStr, lang) {
     if (template.mathMapping.englishToTranslated.length) {
         // To that end we create an English to English math mapping for this
         // string.
-        const englishDictionary = getMathDictionary(englishStr, englishStr);
+        const englishDictionary = getMathDictionary(
+            englishStr, englishStr, lang);
         const englishMapping = getMapping(
             englishStr, englishStr, 'en', MATH_REGEX, englishDictionary);
         // And verify that the math mapping is identical to the one in the
@@ -509,10 +544,10 @@ class TranslationAssistant {
      * @returns {void}
      */
     constructor(allItems, getEnglishStr, getTranslation, lang) {
+        this.lang = lang;
         this.getEnglishStr = getEnglishStr;
         this.getTranslation = getTranslation;
         this.suggestionGroups = this.getSuggestionGroups(allItems);
-        this.lang = lang;
     }
 
     /**
