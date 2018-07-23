@@ -23,7 +23,7 @@ const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
 
 // TODO(michaelpolyak): Add support for other \text commands:
 // https://github.com/Khan/KaTeX/blob/3280652bd68973ad9edd73273137049324c5cab9/src/functions.js#L50
-// Comment(danhollas): Those other commands are rare/non-existent in KA corpus
+// NOTE(danhollas): Those other commands are rare/non-existent in KA corpus
 const TEXT_REGEX = /\\text\s*{([^}]*)}/g;
 const TEXTBF_REGEX = /\\textbf\s*{([^}]*)}/g;
 
@@ -130,23 +130,20 @@ function getMapping(
     const outputs = translatedStr.match(findRegex) || [];
 
     if (findRegex === MATH_REGEX) {
-        inputs = inputs.map(
-            (input) => translateMath(input, lang));
-        inputs = inputs.map(
-            (input) => replaceTextInMath(input, mathDictionary));
+        inputs = inputs
+            .map((input) => translateMath(input, lang))
+            .map((input) => replaceTextInMath(input, mathDictionary));
     }
 
     const mapping = [];
 
     outputs.forEach((output, outputIndex) => {
-        /*
-         * TODO(danielhollas): Should the following be here?
-         * i.e. should we automatically translate math even if translatedStr
-         * was not translated according to our locale rules?
-        if (findRegex === MATH_REGEX) {
-            output = translateMath(output, lang);
-        }
-        */
+
+        // NOTE(danielhollas): Currently, we will not offer smart translations
+        // if the user did not translate math according to our locale rules
+        // if (findRegex === MATH_REGEX) {
+        //     output = translateMath(output, lang);
+        // }
 
         const inputIndex = inputs.indexOf(output);
         if (inputIndex === -1) {
@@ -360,17 +357,19 @@ function createTemplate(englishStr, translatedStr, lang) {
 }
 
 /**
- * Handles any per language special case translations, e.g. Portuguese uses
- * `sen` instead of `sin`. Many lang use decimal comma.
- * According to this table:
+ * Handles any per language special case translations
+ * e.g. Portuguese uses `sen` instead of `sin`,
+ * many languages use decimal comma etc.
+ *
+ * The list of all per-locale math notations is in this table:
  * https://docs.google.com/spreadsheets/d/1qgi-KjumcZ6yru19U5weqZK9TosRlTdLZqbXbABBJoQ/edit#gid=0
  *
  * TODO(danielhollas): For now only the obvious cases were implemented.
+ * TODO(danielhollas): Need to update this when new langs join translations
  *
  * @param {string} math A math expression to translate for locale.
  * @param {string} lang The locale of the translation language.
  * @returns {string} The translated math expression.
- * TODO(danielhollas): Need to update this when new langs join translations
  */
 function translateMath(math, lang) {
 

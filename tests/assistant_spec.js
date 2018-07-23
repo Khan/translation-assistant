@@ -62,7 +62,6 @@ const graphieLink6 = makeGraphieLink();
 
 const getEnglishStr = (item) => item.englishStr;
 const getTranslation = (item) => item.translatedStr;
-const lang = 'cs';
 
 /**
  * Assert that the suggested translations match the translations.
@@ -74,12 +73,13 @@ const lang = 'cs';
  * @param {Array<String|null>} translatedStrs List of the expected translated
  *        strings for items, if an expected translation is `null` it means that
  *        there is no suggested translation expected for the item.
+ * @param {String} lang Locale for translation of math notation
  * @returns {void}
  */
 function assertSuggestions(allItems, itemsToTranslate, translatedStrs,
-        lg = lang) {
+        lang = 'cs') {
     const assistant =
-        new TranslationAssistant(allItems, getEnglishStr, getTranslation, lg);
+        new TranslationAssistant(allItems, getEnglishStr, getTranslation, lang);
 
     const suggestions = assistant.suggest(itemsToTranslate);
 
@@ -407,7 +407,7 @@ describe('TranslationAssistant (math)', function() {
         }];
 
         const assistant = new TranslationAssistant(
-            allItems, getEnglishStr, getTranslation, lang);
+            allItems, getEnglishStr, getTranslation);
 
         const translation = assistant.suggest(itemsToTranslate);
         assert.equal(translation[0][1], null);
@@ -481,7 +481,6 @@ describe('TranslationAssistant (math)', function() {
 
 describe('TranslationAssistant (math-translate)', function() {
     it('should translate decimal point to comma for fr locale', function() {
-        const lang = 'fr';
         const allItems = [{
             englishStr: 'simplify $2.3$',
             translatedStr: 'simplifyz $2{,}3$',
@@ -492,7 +491,7 @@ describe('TranslationAssistant (math-translate)', function() {
         }];
         const translatedStrs = ['simplifyz $2{,}9$'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'fr');
     });
 
     it('should translate math alone', function() {
@@ -503,7 +502,7 @@ describe('TranslationAssistant (math-translate)', function() {
         ];
         const translatedStrs = ['$3 \\cdot x = 9{,}9$', null];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'cs');
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should translate multiple math notations at once', function() {
@@ -573,12 +572,10 @@ describe('TranslationAssistant (math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, [
             'simplifyz $3 \\text{azul} = 2 \\mathbin{:} \\textbf{roja}$',
             'simplifyz $3 \\textbf{azul} = 2 \\mathbin{:} \\text{roja}$',
-        ], 'cs');
+        ]);
     });
 
-    // TODO(danielhollas): This we need to decide
     it('should not suggest ST if math is not translated properly', function() {
-        const lang = 'cs';
         const allItems = [{
             englishStr: 'simplify $2.3$',
             translatedStr: 'simplifyz $2.3$',
@@ -590,11 +587,10 @@ describe('TranslationAssistant (math-translate)', function() {
         const translatedStrs = [null];
         //const translatedStrs = ['simplifyz $2{,}9$'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should not translate decimal point to comma for ko', function() {
-        const lang = 'ko';
         const allItems = [{
             englishStr: 'simplify $2.3$',
             translatedStr: 'simplifyz $2{,}3$',
@@ -605,11 +601,10 @@ describe('TranslationAssistant (math-translate)', function() {
         }];
         const translatedStrs = [null];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'ko');
     });
 
     it('should translate \\mult to \\cdot for cs locale', function() {
-        const lang = 'cs';
         const allItems = [{
             englishStr: 'simplify $2 \\mult 3 \\mult 2$',
             translatedStr: 'simplifyz $2 \\cdot 3 \\cdot 2$',
@@ -620,11 +615,10 @@ describe('TranslationAssistant (math-translate)', function() {
         }];
         const translatedStrs = ['simplifyz $2 \\cdot 9 \\cdot 9$'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
     it('should translate \\div to \\mathbin{:} for de locale', function() {
-        const lang = 'de';
         const allItems = [{
             englishStr: 'simplify $2 \\div 3$',
             translatedStr: 'simplifyz $2 \\mathbin{:} 3$',
@@ -635,11 +629,10 @@ describe('TranslationAssistant (math-translate)', function() {
         }];
         const translatedStrs = ['simplifyz $2 \\mathbin{:} 9 \\mathbin{:} 3$'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'de');
     });
 
     it('should translate \\sin to \\sen for pt locale', function() {
-        const lang = 'pt';
         const allItems = [{
             englishStr: 'from $\\sin \\theta$ to $3\\sin$',
             translatedStr: 'fr $\\operatorname{sen} \\theta$ till ' +
@@ -651,7 +644,7 @@ describe('TranslationAssistant (math-translate)', function() {
         }];
         const translatedStrs = ['fr $\\operatorname{sen} \\theta$ till $5$'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
     });
 });
 
@@ -1124,7 +1117,7 @@ describe('TranslationAssistant (\\text{}, \\textbf{})', function() {
         }];
 
         const assistant = new TranslationAssistant(
-            allItems, getEnglishStr, getTranslation, lang);
+            allItems, getEnglishStr, getTranslation);
 
         const translation = assistant.suggest(itemsToTranslate);
         assert.equal(translation[0][1], null);
