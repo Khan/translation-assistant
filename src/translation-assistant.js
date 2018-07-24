@@ -383,10 +383,10 @@ function translateMath(math, lang) {
          // Decimal comma
          {langs: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'ro',
            'nl', 'hu', 'az', 'it'],
-            regex: /([0-9]).([0-9])/g, replace: '$1{,}$2'},
-         // multiplication sign as a dot
+            regex: /([0-9])\.([0-9])/g, replace: '$1{,}$2'},
+         // multiplication sign as a centered dot
          {langs: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu'],
-            regex: /\\mult/g, replace: '\\cdot'},
+            regex: /\\times/g, replace: '\\cdot'},
     ];
 
     mathTranslations.forEach(function(element) {
