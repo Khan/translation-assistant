@@ -494,10 +494,24 @@ describe('TranslationAssistant (math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'fr');
     });
 
+    it('should not match 10=5 with decimal point regex!', function() {
+        const allItems = [{
+            englishStr: '$50 \\div 10=5$',
+            translatedStr: '$50 \\mathbin{:} 10=5$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: '$460 \\div 10=46$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['$460 \\mathbin{:} 10=46$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
     it('should translate math alone', function() {
         const allItems = [];
         const itemsToTranslate = [
-            {englishStr: '$3 \\mult x = 9.9$', translatedStr: ''},
+            {englishStr: '$3 \\times x = 9.9$', translatedStr: ''},
             {englishStr: 'hello', translatedStr: ''},
         ];
         const translatedStrs = ['$3 \\cdot x = 9{,}9$', null];
@@ -508,7 +522,7 @@ describe('TranslationAssistant (math-translate)', function() {
     it('should translate multiple math notations at once', function() {
         const allItems = [];
         const itemsToTranslate = [
-            {englishStr: '$3 \\mult x = 9.9 \\div 3$', translatedStr: ''},
+            {englishStr: '$3 \\times x = 9.9 \\div 3$', translatedStr: ''},
         ];
         const translatedStrs = ['$3 \\cdot x = 9{,}9 \\mathbin{:} 3$'];
 
@@ -518,7 +532,7 @@ describe('TranslationAssistant (math-translate)', function() {
     it('should translate multiple decimals', function() {
         const allItems = [];
         const itemsToTranslate = [
-            {englishStr: '$3 \\mult x = 9.9 \\div 3.3$', translatedStr: ''},
+            {englishStr: '$3 \\times x = 9.9 \\div 3.3$', translatedStr: ''},
         ];
         const translatedStrs = ['$3 \\cdot x = 9{,}9 \\mathbin{:} 3{,}3$'];
 
@@ -555,7 +569,7 @@ describe('TranslationAssistant (math-translate)', function() {
 
     it('should translate math with \\text{} and \\textbf{}', function() {
         const allItems = [{
-            englishStr: 'simplify $\\text{red} = 5 \\mult \\textbf{blue}$',
+            englishStr: 'simplify $\\text{red} = 5 \\times \\textbf{blue}$',
             translatedStr: 'simplifyz $\\text{azul} = 5 \\cdot \\textbf{roja}$',
         }];
         const itemsToTranslate = [{
@@ -604,13 +618,13 @@ describe('TranslationAssistant (math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'ko');
     });
 
-    it('should translate \\mult to \\cdot for cs locale', function() {
+    it('should translate \\times to \\cdot for cs locale', function() {
         const allItems = [{
-            englishStr: 'simplify $2 \\mult 3 \\mult 2$',
+            englishStr: 'simplify $2 \\times 3 \\times 2$',
             translatedStr: 'simplifyz $2 \\cdot 3 \\cdot 2$',
         }];
         const itemsToTranslate = [{
-            englishStr: 'simplify $2 \\mult 9 \\mult 9$',
+            englishStr: 'simplify $2 \\times 9 \\times 9$',
             translatedStr: '',
         }];
         const translatedStrs = ['simplifyz $2 \\cdot 9 \\cdot 9$'];
