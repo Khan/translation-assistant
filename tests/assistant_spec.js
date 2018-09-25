@@ -529,8 +529,8 @@ describe('TranslationAssistant (math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'de');
     });
 
-    //NOTE(danielhollas): In reality, TA should only get unescaped strings
-    //from Manticore. But I guess this test does not hurt either.
+    // NOTE(danielhollas): In reality, TA should only get unescaped strings
+    // from Manticore. But I guess this test does not hurt either.
     it('should handle doubly-escaped latex commands', function() {
         const allItems = [];
         const itemsToTranslate = [
@@ -559,6 +559,19 @@ describe('TranslationAssistant (math-translate)', function() {
         ];
         const translatedStrs =
            ['$3\\,000{,}5 \\cdot x = 9{,}9 \\mathbin{:} 3\\,300\\,000 $'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should handle both thousand sep. AND decimal comma for cs locale',
+    function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3{,}000.500 \\times x = 9.900 \\div 3{,}300{,}000 $',
+             translatedStr: ''},
+        ];
+        const translatedStrs =
+           ['$3\\,000{,}500 \\cdot x = 9{,}900 \\mathbin{:} 3\\,300\\,000 $'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
@@ -620,11 +633,11 @@ describe('TranslationAssistant (math-translate)', function() {
     it('should translate thousand separator to none for ko locale', function() {
         const allItems = [];
         const itemsToTranslate = [
-            {englishStr: '$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000$',
+            {englishStr: '$3{,}000.500 \\times x = 9.900 \\div 3{,}300{,}000$',
              translatedStr: ''},
         ];
         const translatedStrs =
-           ['$3000.5 \\times x = 9.9 \\div 3300000$'];
+           ['$3000.500 \\times x = 9.900 \\div 3300000$'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'ko');
     });
@@ -637,6 +650,19 @@ describe('TranslationAssistant (math-translate)', function() {
         ];
         const translatedStrs =
            ['$3{.}000{,}5 \\times x = 9{,}9 \\div 3{.}300{.}000 $'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
+    });
+
+    it('should handle thousand separator AND decimal comma for pt locale',
+    function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3{,}000.540 \\times x = 9.900 \\div 3{,}300{,}000 $',
+             translatedStr: ''},
+        ];
+        const translatedStrs =
+           ['$3{.}000{,}540 \\times x = 9{,}900 \\div 3{.}300{.}000 $'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
     });
