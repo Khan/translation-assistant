@@ -360,7 +360,7 @@ function createTemplate(englishStr, translatedStr, lang) {
 
 // This array is used both in translateMath and normalizeTranslatedMath
 const THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES = ['cs', 'fr', 'de',
-      'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'se', 'it', 'hu'];
+      'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'se', 'it', 'hu', 'uk'];
 
 /**
  * Handles any per language special case translations
@@ -381,7 +381,7 @@ function translateMath(math, lang) {
 
     const mathTranslations = [
          // division sign as a colon
-         {langs: ['cs', 'de', 'bg', 'hu'],
+         {langs: ['cs', 'de', 'bg', 'hu', 'uk'],
             regex: /\\div/g, replace: '\\mathbin\{:\}'},
 
          // latin trig functions
