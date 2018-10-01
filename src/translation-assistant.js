@@ -451,8 +451,7 @@ function normalizeTranslatedMath(math, lang) {
          // braces are not really needed.
          // To understand why braces are needed around comma, see:
          // https://tex.stackexchange.com/questions/303110/avoid-space-after-thousands-separator-in-math-mode#303127
-         {langs: ['cs', 'fr', 'de', 'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl',
-                  'az', 'se', 'it'],
+         {langs: THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES,
             regex: /([0-9])\{\\,\}([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
     ];
 
@@ -773,5 +772,9 @@ class TranslationAssistant {
 TranslationAssistant.stringToGroupKey = stringToGroupKey;
 TranslationAssistant.createTemplate = createTemplate;
 TranslationAssistant.populateTemplate = populateTemplate;
+TranslationAssistant.translateMath = translateMath;
+TranslationAssistant.normalizeTranslatedMath = normalizeTranslatedMath;
+TranslationAssistant.THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES =
+THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES;
 
 module.exports = TranslationAssistant;
