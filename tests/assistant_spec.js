@@ -7,6 +7,9 @@ const {
     stringToGroupKey,
     createTemplate,
     populateTemplate,
+    translateMath,
+    normalizeTranslatedMath,
+    THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES,
 } = TranslationAssistant;
 
 /**
@@ -479,6 +482,76 @@ describe('TranslationAssistant (math)', function() {
     });
 });
 
+describe('translateMath', function() {
+    it('should return the same string for en locale', function() {
+        const englishStr = '1{,}000{,}000 \\times 9{,}000.400 \\div 2 = \\sin';
+        const outputStr = translateMath(englishStr, 'en');
+        assert.equal(outputStr, englishStr);
+    });
+
+    it('should translate thousand separator for THOUSAND_SEPARATOR_... locales',
+    function() {
+        const englishStr = '1{,}000{,}000 + 9{,}000';
+        const translatedStr = '1\\,000\\,000 + 9\\,000';
+
+        THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should not translate thousand separator for en locale', function() {
+        const englishStr = '1{,}000{,}000 + 9{,}000';
+        const outputStr = translateMath(englishStr, 'en');
+        assert.equal(outputStr, englishStr);
+    });
+
+    it('should translate both thousand sep. and decimal point for cs locale',
+    function() {
+        const englishStr = '1{,}000{,}000.700 + 9{,}000.000';
+        const translatedStr = '1\\,000\\,000{,}700 + 9\\,000{,}000';
+        const outputStr = translateMath(englishStr, 'cs');
+        assert.equal(outputStr, translatedStr);
+    });
+
+    it('should translate notation for multiplication and division',
+    function() {
+        const englishStr = '2 \\times 2 = 8 \\div 2';
+        const translatedStr = '2 \\cdot 2 = 8 \\mathbin{:} 2';
+        const outputStr = translateMath(englishStr, 'cs');
+        assert.equal(outputStr, translatedStr);
+    });
+
+    it('should translate notation for sinus for certain locales',
+    function() {
+        const englishStr = '\\sin \\theta';
+        const translatedStr = '\\operatorname{sen} \\theta';
+        const outputStr = translateMath(englishStr, 'pt');
+        assert.equal(outputStr, translatedStr);
+    });
+});
+
+describe('normalizeTranslatedMath', function() {
+    it('should strip extra braces around thousand separator as thin space',
+    function() {
+        const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
+        const normalizedStr = '1\\,000\\,000 + 9\\,000';
+
+        THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES.forEach(function(locale) {
+            const outputStr = normalizeTranslatedMath(translatedStr, locale);
+            assert.equal(outputStr, normalizedStr);
+        });
+    });
+
+    it('should not strip extra braces around thousand separator for en locale',
+    function() {
+        const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
+        const normalizedStr = '1{\\,}000{\\,}000 + 9\\,000';
+        const outputStr = normalizeTranslatedMath(translatedStr, 'en');
+        assert.equal(outputStr, normalizedStr);
+    });
+});
+
 describe('TranslationAssistant (math-translate)', function() {
     it('should translate decimal point to comma for fr locale', function() {
         const allItems = [{
@@ -529,6 +602,18 @@ describe('TranslationAssistant (math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'de');
     });
 
+    // NOTE(danielhollas): In reality, TA should only get unescaped strings
+    // from Manticore. But I guess this test does not hurt either.
+    it('should handle doubly-escaped latex commands', function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3 \\\\times x = 9.9 \\\\div 3$', translatedStr: ''},
+        ];
+        const translatedStrs = ['$3 \\\\cdot x = 9{,}9 \\\\mathbin{:} 3$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
     it('should translate multiple decimals', function() {
         const allItems = [];
         const itemsToTranslate = [
@@ -537,6 +622,123 @@ describe('TranslationAssistant (math-translate)', function() {
         const translatedStrs = ['$3 \\cdot x = 9{,}9 \\mathbin{:} 3{,}3$'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'de');
+    });
+
+    it('should translate thousand separator for a thin space', function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000 $',
+             translatedStr: ''},
+        ];
+        const translatedStrs =
+           ['$3\\,000{,}5 \\cdot x = 9{,}9 \\mathbin{:} 3\\,300\\,000 $'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should handle both thousand sep. AND decimal comma for cs locale',
+    function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3{,}000.500 \\times x = 9.900 \\div 3{,}300{,}000 $',
+             translatedStr: ''},
+        ];
+        const translatedStrs =
+           ['$3\\,000{,}500 \\cdot x = 9{,}900 \\mathbin{:} 3\\,300\\,000 $'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should not translate thousand separator for ja locale', function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000$',
+             translatedStr: ''},
+        ];
+        const translatedStrs =
+           ['$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'ja');
+    });
+
+    it('should handle extra braces around thousand separator as thin space',
+    function() {
+        const allItems = [{
+            englishStr: 'simplify $2{,}300 20{,}000{,}090$',
+            translatedStr: 'simplifyz $2{\\,}300 20{\\,}000{\\,}090$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2{,}000{,}000$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2\\,000\\,000$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should handle superfluous braces together with \\text', function() {
+        const allItems = [{
+            englishStr: 'simplify $2{,}300 \\text{to} 20{,}000{,}090$',
+            translatedStr: 'simplifyz $2{\\,}300 \\text{t} 20{\\,}000{\\,}090$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2{,}000{,}000 \\text{to} 20{,}857$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2\\,000\\,000 \\text{t} 20\\,857$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should handle superfluous braces together with \\textbf', function() {
+        const allItems = [{
+            englishStr: 'simplify $2{,}300 \\textbf{to} 2{,}000{,}090$',
+            translatedStr: 'simplif $2{\\,}300 \\textbf{t} 2{\\,}000{\\,}090$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2{,}000{,}000 \\textbf{to} 20{,}857$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplif $2\\,000\\,000 \\textbf{t} 20\\,857$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
+    it('should translate thousand separator to none for ko locale', function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3{,}000.500 \\times x = 9.900 \\div 3{,}300{,}000$',
+             translatedStr: ''},
+        ];
+        const translatedStrs =
+           ['$3000.500 \\times x = 9.900 \\div 3300000$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'ko');
+    });
+
+    it('should translate thousand separator to . for pt locale', function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000 $',
+             translatedStr: ''},
+        ];
+        const translatedStrs =
+           ['$3{.}000{,}5 \\times x = 9{,}9 \\div 3{.}300{.}000 $'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
+    });
+
+    it('should handle thousand separator AND decimal comma for pt locale',
+    function() {
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3{,}000.540 \\times x = 9.900 \\div 3{,}300{,}000 $',
+             translatedStr: ''},
+        ];
+        const translatedStrs =
+           ['$3{.}000{,}540 \\times x = 9{,}900 \\div 3{.}300{.}000 $'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
     });
 
     it('should translate math with \\text', function() {

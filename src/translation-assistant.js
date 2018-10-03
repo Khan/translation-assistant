@@ -140,10 +140,11 @@ function getMapping(
     outputs.forEach((output, outputIndex) => {
 
         // NOTE(danielhollas): Currently, we will not offer smart translations
-        // if the user did not translate math according to our locale rules
-        // if (findRegex === MATH_REGEX) {
-        //     output = translateMath(output, lang);
-        // }
+        // if the user did not translate math according to our locale rules,
+        // normalizeTranslatedMath only handles some special cases.
+        if (findRegex === MATH_REGEX) {
+            output = normalizeTranslatedMath(output, lang);
+        }
 
         const inputIndex = inputs.indexOf(output);
         if (inputIndex === -1) {
@@ -241,6 +242,7 @@ function getMathDictionary(englishStr, translatedStr, lang) {
     });
 
     outputs.forEach((output) => {
+        output = normalizeTranslatedMath(output, lang);
         let normalized = output;
 
         replaceRegexes.forEach(([regex, str]) => {
@@ -356,6 +358,10 @@ function createTemplate(englishStr, translatedStr, lang) {
     }
 }
 
+// This array is used both in translateMath and normalizeTranslatedMath
+const THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES = ['cs', 'fr', 'de',
+      'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'se', 'it', 'hu', 'uk'];
+
 /**
  * Handles any per language special case translations
  * e.g. Portuguese uses `sen` instead of `sin`,
@@ -375,21 +381,81 @@ function translateMath(math, lang) {
 
     const mathTranslations = [
          // division sign as a colon
-         {langs: ['cs', 'de'],
-            regex: /\\div/g, replace: '\\mathbin{:}'},
+         {langs: ['cs', 'de', 'bg', 'hu', 'uk'],
+            regex: /\\div/g, replace: '\\mathbin\{:\}'},
+
          // latin trig functions
-         {langs: ['es', 'it', 'pt', 'pt-pt'],
+         {langs: ['it', 'pt', 'pt-pt'],
             regex: /\\sin/g, replace: '\\operatorname\{sen\}'},
-         // Decimal comma
-         {langs: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'ro',
-           'nl', 'hu', 'az', 'it'],
-            regex: /([0-9])\.([0-9])/g, replace: '$1{,}$2'},
+
          // multiplication sign as a centered dot
-         {langs: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu'],
+         {langs: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv'],
             regex: /\\times/g, replace: '\\cdot'},
+
+         // multiplication sign as a simple dot, a Bulgarian specialty
+         // TODO(danielhollas): not yet allowed by the linter
+         // TODO(danielhollas): add a test for this case
+         //{langs: ['bg'],
+         //   regex: /\\times/g, replace: '\\mathbin\{.\}'},
+
+         // Thousand separator notations
+         // IMPORTANT NOTE(danielhollas):These must come before decimal comma!
+
+         // No thousand separator
+         {langs: ['ko'],
+            regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g, replace: '$1$2'},
+
+         // Thousand separator as a dot
+         // IMPORTANT NOTE(danielhollas): Extra braces around the dot are needed
+         // to distinguish this from decimal comma.
+         {langs: ['pt', 'tr', 'da', 'sr', 'el', 'gr'],
+            regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g, replace: '$1{.}$2'},
+
+         // Thousand separator as a thin space
+         {langs: THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES,
+            regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
+
+         // Decimal comma
+         // IMPORTANT NOTE(danielhollas): This should be tha LAST regex!
+         {langs: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'ro',
+           'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv'],
+            regex: /([0-9])\.([0-9])/g, replace: '$1{,}$2'},
     ];
 
     mathTranslations.forEach(function(element) {
+        if (element.langs.includes(lang)) {
+            math = math.replace(element.regex, element.replace);
+        }
+    });
+
+    return math;
+}
+
+/**
+ * Perform regex substitutions on translated math strings
+ * so that it matches math translations that we do in translateMath()
+ *
+ * @param {string} math A user-translated math expression.
+ * @param {string} lang The locale of the translation language.
+ * @returns {string} The translated math expression.
+ */
+function normalizeTranslatedMath(math, lang) {
+
+    // NOTE(danielhollas): Maybe we could apply this regardless of locales
+    // to make the code more simple? Otherwise, the lists of locales here
+    // needs to be in sync with the list in translateMath function
+    const mathNormalizations = [
+         // Strip superfluous curly braces around \\,
+         // which is used as thousand separator in some locales
+         // i.e. 10{,}200 can be translated as 10{\\,}200, but the curly
+         // braces are not really needed.
+         // To understand why braces are needed around comma, see:
+         // https://tex.stackexchange.com/questions/303110/avoid-space-after-thousands-separator-in-math-mode#303127
+         {langs: THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES,
+            regex: /([0-9])\{\\,\}([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
+    ];
+
+    mathNormalizations.forEach(function(element) {
         if (element.langs.includes(lang)) {
             math = math.replace(element.regex, element.replace);
         }
@@ -706,5 +772,9 @@ class TranslationAssistant {
 TranslationAssistant.stringToGroupKey = stringToGroupKey;
 TranslationAssistant.createTemplate = createTemplate;
 TranslationAssistant.populateTemplate = populateTemplate;
+TranslationAssistant.translateMath = translateMath;
+TranslationAssistant.normalizeTranslatedMath = normalizeTranslatedMath;
+TranslationAssistant.THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES =
+THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES;
 
 module.exports = TranslationAssistant;
