@@ -359,6 +359,25 @@ function createTemplate(englishStr, translatedStr, lang) {
 }
 
 /**
+ * Locale lists for different math notations, taken from this table:
+ * https://docs.google.com/spreadsheets/d/1qgi-KjumcZ6yru19U5weqZK9TosRlTdLZqbXbABBJoQ/edit#gid=0
+ * TODO(danielhollas): Need to update this when new langs join translations
+ */
+const MATH_RULES_LOCALES = {
+    THOUSAND_SEP_AS_THIN_SPACE: ['cs', 'fr', 'de',
+         'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'],
+    THOUSAND_SEP_AS_DOT: ['pt', 'tr', 'da', 'sr', 'el'],
+    NO_THOUSAND_SEP: ['ko', 'ps'],
+    DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr',
+            'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el'],
+    TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da'],
+    DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da'],
+    SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
+    ARABIC_COMMA: ['ps'],
+    PERSO_ARABIC_NUMERALS: ['ps'],
+};
+
+/**
  * Translates western-arabic numerals to others, see:
  * https://en.wikipedia.org/wiki/Eastern_Arabic_numerals
  *
@@ -370,8 +389,7 @@ function translateNumerals(math, lang) {
     // Perso-Arabic numerals (Used by Pashto)
     // TODO(danielhollas): Move this const to a better place,
     // pending PR #13
-    const PERSO_ARABIC_NUMERALS_LOCALES = ['ps'];
-    if (PERSO_ARABIC_NUMERALS_LOCALES.includes(lang)) {
+    if (MATH_RULES_LOCALES.PERSO_ARABIC_NUMERALS.includes(lang)) {
         math = math.replace(/1/g, '۱')
                    .replace(/2/g, '۲')
                    .replace(/3/g, '۳')
@@ -391,20 +409,9 @@ function translateNumerals(math, lang) {
     return math;
 }
 
-// This array is used both in translateMath and normalizeTranslatedMath
-const THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES = ['cs', 'fr', 'de',
-      'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'];
-
 /**
  * Handles any per language special case translations
- * e.g. Portuguese uses `sen` instead of `sin`,
- * many languages use decimal comma etc.
- *
- * The list of all per-locale math notations is in this table:
- * https://docs.google.com/spreadsheets/d/1qgi-KjumcZ6yru19U5weqZK9TosRlTdLZqbXbABBJoQ/edit#gid=0
- *
- * TODO(danielhollas): For now only the obvious cases were implemented.
- * TODO(danielhollas): Need to update this when new langs join translations
+ * e.g. thousand separators, decimal commas etc.
  *
  * @param {string} math A math expression to translate for locale.
  * @param {string} lang The locale of the translation language.
@@ -412,17 +419,43 @@ const THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES = ['cs', 'fr', 'de',
  */
 function translateMath(math, lang) {
 
+    // These consts are used only here for manimupulating thousand separator
+    const placeholder = 'THSEP';
+    const USThousandSeparatorRegex =
+        new RegExp(`([0-9])${placeholder}([0-9])(?=[0-9]{2})`, 'g');
+    const thousandSeparatorLocales =
+            MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE
+            .concat(MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
+            MATH_RULES_LOCALES.NO_THOUSAND_SEP);
+
     const mathTranslations = [
+         // IMPORTANT NOTE: This MUST be the first regex
+         // Convert thousand separators to a placeholder
+         // to prevent interactions with decimal commas
+         {langs: thousandSeparatorLocales,
+            regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g,
+            replace: `$1${placeholder}$2`},
+
+         // Decimal comma
+         {langs: MATH_RULES_LOCALES.DECIMAL_COMMA,
+            regex: /([0-9])\.([0-9])/g, replace: '$1{,}$2'},
+
+         // Arabic decimal comma, see https://en.wikipedia.org/wiki/Comma
+         // NOTE: At least in MathJax, this comma does not need braces,
+         // but it feels safer to have them here.
+         {langs: MATH_RULES_LOCALES.ARABIC_COMMA,
+            regex: /([0-9])\.([0-9])/g, replace: '$1{،}$2'},
+
          // division sign as a colon
-         {langs: ['cs', 'de', 'bg', 'hu', 'uk', 'da'],
+         {langs: MATH_RULES_LOCALES.DIV_AS_COLON,
             regex: /\\div/g, replace: '\\mathbin{:}'},
 
          // latin trig functions
-         {langs: ['it', 'pt', 'pt-pt'],
+         {langs: MATH_RULES_LOCALES.SIN_AS_SEN,
             regex: /\\sin/g, replace: '\\operatorname{sen}'},
 
          // multiplication sign as a centered dot
-         {langs: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da'],
+         {langs: MATH_RULES_LOCALES.TIMES_AS_CDOT,
             regex: /\\times/g, replace: '\\cdot'},
 
          // multiplication sign as a simple dot, a Bulgarian specialty
@@ -432,33 +465,18 @@ function translateMath(math, lang) {
          //   regex: /\\times/g, replace: '\\mathbin{.}'},
 
          // Thousand separator notations
-         // IMPORTANT NOTE(danielhollas):These must come before decimal comma!
 
          // No thousand separator
-         {langs: ['ko', 'ps'],
-            regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g, replace: '$1$2'},
+         {langs: MATH_RULES_LOCALES.NO_THOUSAND_SEP,
+            regex: USThousandSeparatorRegex, replace: '$1$2'},
 
          // Thousand separator as a dot
-         // IMPORTANT NOTE(danielhollas): Extra braces around the dot are needed
-         // to distinguish this from decimal comma.
-         {langs: ['pt', 'tr', 'da', 'sr', 'el', 'gr'],
-            regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g, replace: '$1{.}$2'},
+         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
+            regex: USThousandSeparatorRegex, replace: '$1.$2'},
 
-         // Thousand separator as a thin space
-         {langs: THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES,
-            regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
-
-         // Arabic decimal comma, see https://en.wikipedia.org/wiki/Comma
-         // NOTE: At least in MathJax, this comma does not need braces,
-         // but it feels safer to have them here.
-         {langs: ['ps'],
-            regex: /([0-9])\.([0-9])/g, replace: '$1{،}$2'},
-
-         // Decimal comma
-         // IMPORTANT NOTE(danielhollas): This should be tha LAST regex!
-         {langs: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'ro',
-           'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv'],
-            regex: /([0-9])\.([0-9])/g, replace: '$1{,}$2'},
+         // Thousand separator as a thin space (\, in Tex)
+         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
+            regex: USThousandSeparatorRegex, replace: '$1\\,$2'},
     ];
 
     mathTranslations.forEach(function(element) {
@@ -481,9 +499,6 @@ function translateMath(math, lang) {
  */
 function normalizeTranslatedMath(math, lang) {
 
-    // NOTE(danielhollas): Maybe we could apply this regardless of locales
-    // to make the code more simple? Otherwise, the lists of locales here
-    // needs to be in sync with the list in translateMath function
     const mathNormalizations = [
          // Strip superfluous curly braces around \\,
          // which is used as thousand separator in some locales
@@ -491,8 +506,18 @@ function normalizeTranslatedMath(math, lang) {
          // braces are not really needed.
          // To understand why braces are needed around comma, see:
          // https://tex.stackexchange.com/questions/303110/avoid-space-after-thousands-separator-in-math-mode#303127
-         {langs: THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES,
+         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
             regex: /([0-9])\{\\,\}([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
+
+         // Strip extra braces around a dot as a thousand separator
+         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
+            regex: /([0-9])\{\.\}([0-9])(?=[0-9]{2})/g, replace: '$1.$2'},
+
+         // Allow translators to use a full space (~ in LaTeX)
+         // (but TA will always suggest thin space \,)
+         // We cannot allow a literal space here, cause Tex would ignore it
+         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
+            regex: /([0-9])\{?~\}?([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
     ];
 
     mathNormalizations.forEach(function(element) {
@@ -814,7 +839,6 @@ TranslationAssistant.createTemplate = createTemplate;
 TranslationAssistant.populateTemplate = populateTemplate;
 TranslationAssistant.translateMath = translateMath;
 TranslationAssistant.normalizeTranslatedMath = normalizeTranslatedMath;
-TranslationAssistant.THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES =
-THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES;
+TranslationAssistant.MATH_RULES_LOCALES = MATH_RULES_LOCALES;
 
 module.exports = TranslationAssistant;
