@@ -358,6 +358,39 @@ function createTemplate(englishStr, translatedStr, lang) {
     }
 }
 
+/**
+ * Translates western-arabic numerals to others, see:
+ * https://en.wikipedia.org/wiki/Eastern_Arabic_numerals
+ *
+ * @param {string} math A math expression to translate for locale.
+ * @param {string} lang The locale of the translation language.
+ * @returns {string} The math expression with translated numerals.
+ */
+function translateNumerals(math, lang) {
+    // Perso-Arabic numerals (Used by Pashto)
+    // TODO(danielhollas): Move this const to a better place,
+    // pending PR #13
+    const PERSO_ARABIC_NUMERALS_LOCALES = ['ps'];
+    if (PERSO_ARABIC_NUMERALS_LOCALES.includes(lang)) {
+        math = math.replace(/1/g, '۱')
+                   .replace(/2/g, '۲')
+                   .replace(/3/g, '۳')
+                   .replace(/4/g, '۴')
+                   .replace(/5/g, '۵')
+                   .replace(/6/g, '۶')
+                   .replace(/7/g, '۷')
+                   .replace(/8/g, '۸')
+                   .replace(/9/g, '۹')
+                   .replace(/0/g, '۰');
+    }
+    // TODO(danielhollas): Implement Eastern-Arabic numerals
+    // (currently not in use by any team)
+    // Unicode code-points for these are different from the Perso-Arabic,
+    // even though some of the numbers look the same!
+
+    return math;
+}
+
 // This array is used both in translateMath and normalizeTranslatedMath
 const THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES = ['cs', 'fr', 'de',
       'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'];
@@ -402,7 +435,7 @@ function translateMath(math, lang) {
          // IMPORTANT NOTE(danielhollas):These must come before decimal comma!
 
          // No thousand separator
-         {langs: ['ko'],
+         {langs: ['ko', 'ps'],
             regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g, replace: '$1$2'},
 
          // Thousand separator as a dot
@@ -414,6 +447,12 @@ function translateMath(math, lang) {
          // Thousand separator as a thin space
          {langs: THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES,
             regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
+
+         // Arabic decimal comma, see https://en.wikipedia.org/wiki/Comma
+         // NOTE: At least in MathJax, this comma does not need braces,
+         // but it feels safer to have them here.
+         {langs: ['ps'],
+            regex: /([0-9])\.([0-9])/g, replace: '$1{،}$2'},
 
          // Decimal comma
          // IMPORTANT NOTE(danielhollas): This should be tha LAST regex!
@@ -428,6 +467,7 @@ function translateMath(math, lang) {
         }
     });
 
+    math = translateNumerals(math, lang);
     return math;
 }
 

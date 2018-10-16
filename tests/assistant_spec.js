@@ -529,6 +529,22 @@ describe('translateMath', function() {
         const outputStr = translateMath(englishStr, 'pt');
         assert.equal(outputStr, translatedStr);
     });
+
+    it('should translate western- to eastern-arabic numerals for pashto',
+    function() {
+        const englishStr = '1234567890';
+        const translatedStr = '۱۲۳۴۵۶۷۸۹۰';
+        const outputStr = translateMath(englishStr, 'ps');
+        assert.equal(outputStr, translatedStr);
+    });
+
+    it('should use arabic decimal comma and no thousand separator for pashto',
+    function() {
+        const englishStr = '1{,}234{,}567.890';
+        const translatedStr = '۱۲۳۴۵۶۷{،}۸۹۰';
+        const outputStr = translateMath(englishStr, 'ps');
+        assert.equal(outputStr, translatedStr);
+    });
 });
 
 describe('normalizeTranslatedMath', function() {
