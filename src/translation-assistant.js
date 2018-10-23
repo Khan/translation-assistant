@@ -360,7 +360,7 @@ function createTemplate(englishStr, translatedStr, lang) {
 
 // This array is used both in translateMath and normalizeTranslatedMath
 const THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES = ['cs', 'fr', 'de',
-      'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'se', 'it', 'hu', 'uk'];
+      'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'];
 
 /**
  * Handles any per language special case translations
@@ -381,22 +381,22 @@ function translateMath(math, lang) {
 
     const mathTranslations = [
          // division sign as a colon
-         {langs: ['cs', 'de', 'bg', 'hu', 'uk'],
-            regex: /\\div/g, replace: '\\mathbin\{:\}'},
+         {langs: ['cs', 'de', 'bg', 'hu', 'uk', 'da'],
+            regex: /\\div/g, replace: '\\mathbin{:}'},
 
          // latin trig functions
          {langs: ['it', 'pt', 'pt-pt'],
-            regex: /\\sin/g, replace: '\\operatorname\{sen\}'},
+            regex: /\\sin/g, replace: '\\operatorname{sen}'},
 
          // multiplication sign as a centered dot
-         {langs: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv'],
+         {langs: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da'],
             regex: /\\times/g, replace: '\\cdot'},
 
          // multiplication sign as a simple dot, a Bulgarian specialty
          // TODO(danielhollas): not yet allowed by the linter
          // TODO(danielhollas): add a test for this case
          //{langs: ['bg'],
-         //   regex: /\\times/g, replace: '\\mathbin\{.\}'},
+         //   regex: /\\times/g, replace: '\\mathbin{.}'},
 
          // Thousand separator notations
          // IMPORTANT NOTE(danielhollas):These must come before decimal comma!
