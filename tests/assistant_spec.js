@@ -9,7 +9,7 @@ const {
     populateTemplate,
     translateMath,
     normalizeTranslatedMath,
-    THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES,
+    MATH_RULES_LOCALES,
 } = TranslationAssistant;
 
 /**
@@ -489,21 +489,48 @@ describe('translateMath', function() {
         assert.equal(outputStr, englishStr);
     });
 
-    it('should translate thousand separator for THOUSAND_SEPARATOR_... locales',
-    function() {
+    it('should translate thousand separator as thin space', function() {
         const englishStr = '1{,}000{,}000 + 9{,}000';
         const translatedStr = '1\\,000\\,000 + 9\\,000';
 
-        THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES.forEach(function(locale) {
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(function(locale) {
             const outputStr = translateMath(englishStr, locale);
             assert.equal(outputStr, translatedStr);
         });
+    });
+
+    it('should translate thousand separator as a dot', function() {
+        const englishStr = '1{,}000{,}000 + 9{,}000';
+        const translatedStr = '1.000.000 + 9.000';
+
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate thousand separator for none', function() {
+        const englishStr = '1{,}000{,}000 + 9{,}000';
+        const translatedStr = '1000000 + 9000';
+
+        const outputStr = translateMath(englishStr, 'ko');
+        assert.equal(outputStr, translatedStr);
     });
 
     it('should not translate thousand separator for en locale', function() {
         const englishStr = '1{,}000{,}000 + 9{,}000';
         const outputStr = translateMath(englishStr, 'en');
         assert.equal(outputStr, englishStr);
+    });
+
+    it('should translate decimal point to decimal comma', function() {
+        const englishStr = '1000.000 + 9.4 + 45.0';
+        const translatedStr = '1000{,}000 + 9{,}4 + 45{,}0';
+
+        MATH_RULES_LOCALES.DECIMAL_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
     });
 
     it('should translate both thousand sep. and decimal point for cs locale',
@@ -514,28 +541,48 @@ describe('translateMath', function() {
         assert.equal(outputStr, translatedStr);
     });
 
-    it('should translate notation for multiplication and division',
-    function() {
-        const englishStr = '2 \\times 2 = 8 \\div 2';
-        const translatedStr = '2 \\cdot 2 = 8 \\mathbin{:} 2';
+    it('should translate notation for multiplication', function() {
+        MATH_RULES_LOCALES.TIMES_AS_CDOT.forEach(function(locale) {
+            const englishStr = '2 \\times 2 = 4';
+            const translatedStr = '2 \\cdot 2 = 4';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate notation for division', function() {
+        MATH_RULES_LOCALES.DIV_AS_COLON.forEach(function(locale) {
+            const englishStr = '8 \\div 2 = 4';
+            const translatedStr = '8 \\mathbin{:} 2 = 4';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate different math notations simultaneously', function() {
+        const englishStr = '8\\div 2=2 \\times 2, 1{,}000{,}000.874';
+        const translatedStr = '8\\mathbin{:} 2=2 \\cdot 2, 1\\,000\\,000{,}874';
         const outputStr = translateMath(englishStr, 'cs');
         assert.equal(outputStr, translatedStr);
     });
 
     it('should translate notation for sinus for certain locales',
     function() {
-        const englishStr = '\\sin \\theta';
-        const translatedStr = '\\operatorname{sen} \\theta';
-        const outputStr = translateMath(englishStr, 'pt');
-        assert.equal(outputStr, translatedStr);
+        MATH_RULES_LOCALES.SIN_AS_SEN.forEach(function(locale) {
+            const englishStr = '\\sin \\theta';
+            const translatedStr = '\\operatorname{sen} \\theta';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
     });
 
-    it('should translate western- to eastern-arabic numerals for pashto',
-    function() {
-        const englishStr = '1234567890';
-        const translatedStr = '۱۲۳۴۵۶۷۸۹۰';
-        const outputStr = translateMath(englishStr, 'ps');
-        assert.equal(outputStr, translatedStr);
+    it('should translate western- to perso-arabic numerals', function() {
+        MATH_RULES_LOCALES.PERSO_ARABIC_NUMERALS.forEach(function(locale) {
+            const englishStr = '1234567890';
+            const translatedStr = '۱۲۳۴۵۶۷۸۹۰';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
     });
 
     it('should use arabic decimal comma and no thousand separator for pashto',
@@ -553,7 +600,18 @@ describe('normalizeTranslatedMath', function() {
         const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
         const normalizedStr = '1\\,000\\,000 + 9\\,000';
 
-        THOUSAND_SEPARATOR_AS_THIN_SPACE_LOCALES.forEach(function(locale) {
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(function(locale) {
+            const outputStr = normalizeTranslatedMath(translatedStr, locale);
+            assert.equal(outputStr, normalizedStr);
+        });
+    });
+
+    it('should strip extra braces around thousand separator as a dot',
+    function() {
+        const translatedStr = '1{.}000{.}000 + 9.000 + 1{,}2';
+        const normalizedStr = '1.000.000 + 9.000 + 1{,}2';
+
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT.forEach(function(locale) {
             const outputStr = normalizeTranslatedMath(translatedStr, locale);
             assert.equal(outputStr, normalizedStr);
         });
@@ -563,6 +621,34 @@ describe('normalizeTranslatedMath', function() {
     function() {
         const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
         const normalizedStr = '1{\\,}000{\\,}000 + 9\\,000';
+        const outputStr = normalizeTranslatedMath(translatedStr, 'en');
+        assert.equal(outputStr, normalizedStr);
+    });
+
+    it('should convert ~ to thin space as thousand separator', function() {
+        const translatedStr = '1~000~000 + 9~000';
+        const normalizedStr = '1\\,000\\,000 + 9\\,000';
+
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(
+        function(locale) {
+            const outputStr = normalizeTranslatedMath(translatedStr, locale);
+            assert.equal(outputStr, normalizedStr);
+        });
+    });
+
+    it('should convert {~} to thin space as thousand separator', function() {
+        const translatedStr = '1{~}000{~}000 + 9{~}000';
+        const normalizedStr = '1\\,000\\,000 + 9\\,000';
+
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(function(locale) {
+            const outputStr = normalizeTranslatedMath(translatedStr, locale);
+            assert.equal(outputStr, normalizedStr);
+        });
+    });
+
+    it('should NOT convert ~ to thin space for en locale', function() {
+        const translatedStr = '1~000~000 + 9~000';
+        const normalizedStr = '1~000~000 + 9~000';
         const outputStr = normalizeTranslatedMath(translatedStr, 'en');
         assert.equal(outputStr, normalizedStr);
     });
@@ -692,6 +778,20 @@ describe('TranslationAssistant (math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
+    it('should allow ~ as a thousand separator', function() {
+        const allItems = [{
+            englishStr: 'simplify $2{,}300 20{,}000{,}090$',
+            translatedStr: 'simplifyz $2~300 20~000~090$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $2{,}000{,}000$',
+            translatedStr: '',
+        }];
+        const translatedStrs = ['simplifyz $2\\,000\\,000$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+    });
+
     it('should handle superfluous braces together with \\text', function() {
         const allItems = [{
             englishStr: 'simplify $2{,}300 \\text{to} 20{,}000{,}090$',
@@ -739,7 +839,7 @@ describe('TranslationAssistant (math-translate)', function() {
              translatedStr: ''},
         ];
         const translatedStrs =
-           ['$3{.}000{,}5 \\times x = 9{,}9 \\div 3{.}300{.}000 $'];
+           ['$3.000{,}5 \\times x = 9{,}9 \\div 3.300.000 $'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
     });
@@ -752,7 +852,7 @@ describe('TranslationAssistant (math-translate)', function() {
              translatedStr: ''},
         ];
         const translatedStrs =
-           ['$3{.}000{,}540 \\times x = 9{,}900 \\div 3{.}300{.}000 $'];
+           ['$3.000{,}540 \\times x = 9{,}900 \\div 3.300.000 $'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
     });
