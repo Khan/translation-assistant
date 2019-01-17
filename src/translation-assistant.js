@@ -364,14 +364,17 @@ function createTemplate(englishStr, translatedStr, lang) {
  * TODO(danielhollas): Need to update this when new langs join translations
  */
 const MATH_RULES_LOCALES = {
-    THOUSAND_SEP_AS_THIN_SPACE: ['cs', 'fr', 'de',
+    THOUSAND_SEP_AS_THIN_SPACE: ['cs', 'fr', 'de', 'lol',
          'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'],
     THOUSAND_SEP_AS_DOT: ['pt', 'tr', 'da', 'sr', 'el'],
     NO_THOUSAND_SEP: ['ko', 'ps'],
-    DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr',
+    DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'lol',
             'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el'],
-    TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da'],
-    DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da'],
+    // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
+    // when \mathbin{.} becomes available for them
+    TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da', 'bg',
+            'lol'],
+    DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'lol'],
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
     ARABIC_COMMA: ['ps'],
     PERSO_ARABIC_NUMERALS: ['ps'],
@@ -387,8 +390,6 @@ const MATH_RULES_LOCALES = {
  */
 function translateNumerals(math, lang) {
     // Perso-Arabic numerals (Used by Pashto)
-    // TODO(danielhollas): Move this const to a better place,
-    // pending PR #13
     if (MATH_RULES_LOCALES.PERSO_ARABIC_NUMERALS.includes(lang)) {
         math = math.replace(/1/g, '۱')
                    .replace(/2/g, '۲')
