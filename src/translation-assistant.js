@@ -428,6 +428,27 @@ function translateMath(math, lang) {
             .concat(MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
             MATH_RULES_LOCALES.NO_THOUSAND_SEP);
 
+    // Definition of regex for decimal numbers
+    // We need to allow for strings like '\\greenD{3}.\\blue{1}' or
+    // repeating decimals like '1/3 = 0.\\overline{3}'
+    //
+    // Colors currently used in KA strings taken from jipt-hack.jsx
+    // \\overline is handled elsewhere since it appears only
+    // on the right side of the decimal point
+    const katexColorMacros = ['blue', 'blueA', 'blueB', 'blueC', 'blueD',
+         'goldB', 'goldC', 'goldD', 'gray', 'grayD', 'grayE', 'grayF',
+         'green', 'greenB', 'greenC', 'greenD', 'greenE', 'kaBlue',
+         'maroonB', 'maroonC', 'maroonD', 'maroonE', 'orange', 'pink',
+         'purple', 'purpleA', 'purpleC', 'purpleD', 'purpleE',
+         'red', 'redA', 'redB', 'redC', 'redD', 'redE',
+         'tealA', 'tealB', 'tealC', 'tealD', 'tealE']
+         .join('\\{)|(?:\\\\');
+
+    const integerPart = `((?:\\\\${katexColorMacros}\\{)?[0-9]\\}?)`;
+    const decPart =
+       `((?:\\\\overline\\{)|(?:\\\\${katexColorMacros}\\{)?[0-9])`;
+    const decimalNumberRegex = new RegExp(`${integerPart}\\.${decPart}`, 'g');
+
     const mathTranslations = [
          // IMPORTANT NOTE: This MUST be the first regex
          // Convert thousand separators to a placeholder
@@ -438,13 +459,13 @@ function translateMath(math, lang) {
 
          // Decimal comma
          {langs: MATH_RULES_LOCALES.DECIMAL_COMMA,
-            regex: /([0-9])\.([0-9])/g, replace: '$1{,}$2'},
+            regex: decimalNumberRegex, replace: '$1{,}$2'},
 
          // Arabic decimal comma, see https://en.wikipedia.org/wiki/Comma
          // NOTE: At least in MathJax, this comma does not need braces,
          // but it feels safer to have them here.
          {langs: MATH_RULES_LOCALES.ARABIC_COMMA,
-            regex: /([0-9])\.([0-9])/g, replace: '$1{،}$2'},
+            regex: decimalNumberRegex, replace: '$1{،}$2'},
 
          // division sign as a colon
          {langs: MATH_RULES_LOCALES.DIV_AS_COLON,
