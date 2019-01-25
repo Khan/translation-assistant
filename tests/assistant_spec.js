@@ -611,9 +611,9 @@ describe('translateMath', function() {
 
     it('should translate decimals wrapped in color commands', function() {
         const englishStr =
-           '\\blue{1}.\\tealE{3} \\tealE{9}.\\blue{4} \\redA{0}.\\red{3}';
+           '\\blue{13}.\\tealE{3} \\tealE{9}.\\blue{4} \\redA{0}.\\red{33}';
         let translatedStr =
-           '\\blue{1}{,}\\tealE{3} \\tealE{9}{,}\\blue{4} \\redA{0}{,}\\red{3}';
+           '\\blue{13}{,}\\tealE{3} \\tealE{9}{,}\\blue{4} \\redA{0}{,}\\red{33}';
 
         MATH_RULES_LOCALES.DECIMAL_COMMA.forEach(function(locale) {
             const outputStr = translateMath(englishStr, locale);
@@ -621,7 +621,23 @@ describe('translateMath', function() {
         });
 
         translatedStr =
-           '\\blue{۱}{،}\\tealE{۳} \\tealE{۹}{،}\\blue{۴} \\redA{۰}{،}\\red{۳}';
+           '\\blue{۱۳}{،}\\tealE{۳} \\tealE{۹}{،}\\blue{۴} \\redA{۰}{،}\\red{۳۳}';
+        MATH_RULES_LOCALES.ARABIC_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should NOT translate decimals wrapped in other tex commands', function() {
+        const englishStr = '\\hat{1}.\\tealE{3} \\tealE{9}.\\hat{4}';
+        let translatedStr = englishStr;
+
+        MATH_RULES_LOCALES.DECIMAL_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+
+        translatedStr = '\\hat{۱}.\\tealE{۳} \\tealE{۹}.\\hat{۴}';
         MATH_RULES_LOCALES.ARABIC_COMMA.forEach(function(locale) {
             const outputStr = translateMath(englishStr, locale);
             assert.equal(outputStr, translatedStr);

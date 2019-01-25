@@ -443,12 +443,12 @@ function translateMath(math, lang) {
          'purple', 'purpleA', 'purpleC', 'purpleD', 'purpleE',
          'red', 'redA', 'redB', 'redC', 'redD', 'redE',
          'tealA', 'tealB', 'tealC', 'tealD', 'tealE']
-         .join('\\{)|(?:\\\\');
+         .join('|');
 
-    const integerPart = `((?:\\\\${katexColorMacros}\\{)?[0-9]\\}?)`;
+    const integerPart = `[0-9]+|\\\\(?:${katexColorMacros})\\{[0-9]+\\}`;
     const decPart =
-       `((?:\\\\overline\\{)|(?:\\\\${katexColorMacros}\\{)?[0-9])`;
-    const decimalNumberRegex = new RegExp(`${integerPart}\\.${decPart}`, 'g');
+       `[0-9]+|\\\\(?:overline|${katexColorMacros})\\{[0-9]+\\}`;
+    const decimalNumberRegex = new RegExp(`(${integerPart})\\.(${decPart})`, 'g');
 
     const mathTranslations = [
          // IMPORTANT NOTE: This MUST be the first regex
