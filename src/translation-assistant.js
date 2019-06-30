@@ -448,7 +448,8 @@ function translateMath(math, lang) {
     const integerPart = `[0-9]+|\\\\(?:${katexColorMacros})\\{[0-9]+\\}`;
     const decPart =
        `[0-9]+|\\\\(?:overline|${katexColorMacros})\\{[0-9]+\\}`;
-    const decimalNumberRegex = new RegExp(`(${integerPart})\\.(${decPart})`, 'g');
+    const decimalNumberRegex =
+      new RegExp(`(${integerPart})\\.(${decPart})`, 'g');
 
     const mathTranslations = [
          // IMPORTANT NOTE: This MUST be the first regex
