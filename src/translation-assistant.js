@@ -66,7 +66,7 @@ function stringToGroupKey(str) {
     const texts = maths.map((math) => {
         const result = [];
 
-        allMatches(math, /\\text(?:bf)?{([^}]*)}/g,
+        allMatches(math, /\\text(?:bf)?\s*{([^}]*)}/g,
             (matches) => result.push(matches[1]));
 
         // The natural language text is sorted so that even if the formula is
