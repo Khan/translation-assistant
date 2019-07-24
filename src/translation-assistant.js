@@ -432,21 +432,23 @@ function translateMath(math, lang) {
     // We need to allow for strings like '\\greenD{3}.\\blue{1}' or
     // repeating decimals like '1/3 = 0.\\overline{3}'
     //
-    // Colors currently used in KA strings taken from jipt-hack.jsx
+    // Colors currently used in KA strings taken from KaTeX definitions, see:
+    // https://github.com/KaTeX/KaTeX/blob/master/src/macros.js
+    //
     // \\overline is handled elsewhere since it appears only
     // on the right side of the decimal point
-    const katexColorMacros = ['blue', 'blueA', 'blueB', 'blueC', 'blueD',
-         'goldB', 'goldC', 'goldD', 'gray', 'grayD', 'grayE', 'grayF',
-         'green', 'greenB', 'greenC', 'greenD', 'greenE', 'kaBlue',
-         'maroonB', 'maroonC', 'maroonD', 'maroonE', 'orange', 'pink',
-         'purple', 'purpleA', 'purpleC', 'purpleD', 'purpleE',
-         'red', 'redA', 'redB', 'redC', 'redD', 'redE',
-         'tealA', 'tealB', 'tealC', 'tealD', 'tealE']
+    //
+    // These colors are appended by optional [A-Z]? to match all definitions
+    // from KaTeX. This will form a superset of actually defined colors,
+    // but that hardly matters here and is more future-proof if new colors
+    // were defined at some point
+    const katexColorMacros = ['blue', 'gold', 'gray', 'mint', 'green', 'red',
+         'maroon', 'orange', 'pink', 'purple', 'teal', 'kaBlue', 'kaGreen']
          .join('|');
 
-    const integerPart = `[0-9]+|\\\\(?:${katexColorMacros})\\{[0-9]+\\}`;
+    const integerPart = `[0-9]+|\\\\(?:${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
     const decPart =
-       `[0-9]+|\\\\(?:overline|${katexColorMacros})\\{[0-9]+\\}`;
+       `[0-9]+|\\\\(?:overline|${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
     const decimalNumberRegex =
       new RegExp(`(${integerPart})\\.(${decPart})`, 'g');
 
