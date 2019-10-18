@@ -66,8 +66,14 @@ function stringToGroupKey(str) {
     const texts = maths.map((math) => {
         const result = [];
 
-        allMatches(math, /\\text(?:bf)?{([^}]*)}/g,
-            (matches) => result.push(matches[1]));
+        const regex = new RegExp(
+            `${TEXT_REGEX.source}|${TEXTBF_REGEX.source}`, 'g');
+
+        allMatches(math, regex,
+            (matches) => result.push(
+                // TEXT_REGEX capture group is at index 1 and TEXTBF_REGEX at
+                // index 2. One of the groups is expected to be `undefined`.
+                matches[1] || matches[2]));
 
         // The natural language text is sorted so that even if the formula is
         // different and the natural language text is in a different order
