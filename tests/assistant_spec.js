@@ -193,6 +193,30 @@ describe('TranslationAssistant', function() {
             assertSuggestions(allItems, itemsToTranslate, translatedStrs);
         });
 
+        it('should return null when there\'s nl text inside \\text{}',
+        function() {
+            const allItems = [];
+            const itemsToTranslate = [{
+                englishStr: '$\\text {simplify } 3x = 9$',
+                translatedStr: '',
+            }];
+            const translatedStrs = [null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        });
+
+        it('should return null when there\'s nl text inside \\textbf{}',
+        function() {
+            const allItems = [];
+            const itemsToTranslate = [{
+                englishStr: '$\\textbf {simplify } 3x = 9$',
+                translatedStr: '',
+            }];
+            const translatedStrs = [null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        });
+
         it('should return the same math', function() {
             const allItems = [];
             const itemsToTranslate = [
@@ -1641,7 +1665,7 @@ describe('normalizeString', function() {
             '{"str":"__MATH__ and __MATH__","texts":[["red"],["blue"]]}');
 
         assert.equal(
-            stringToGroupKey('${\\text{red} + \\textbf{blue}$ and $1 + 2$'),
+            stringToGroupKey('${\\text {red} + \\textbf {blue}$ and $1 + 2$'),
             '{"str":"__MATH__ and __MATH__","texts":[["blue","red"],[]]}');
     });
 });
