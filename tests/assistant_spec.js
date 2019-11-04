@@ -616,6 +616,58 @@ describe('translateMath', function() {
         const outputStr = translateMath(englishStr, 'ps');
         assert.equal(outputStr, translatedStr);
     });
+
+    it('should translate repeating decimal numbers', function() {
+        const englishStr = '1.\\overline{3} + 9.\\overline{44}';
+        let translatedStr = '1{,}\\overline{3} + 9{,}\\overline{44}';
+
+        MATH_RULES_LOCALES.DECIMAL_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+
+        translatedStr = '۱{،}\\overline{۳} + ۹{،}\\overline{۴۴}';
+        MATH_RULES_LOCALES.ARABIC_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate decimals wrapped in color commands', function() {
+        const englishStr =
+           '\\blue{13}.\\tealE{3} \\tealE{9}.\\blue{4} \\redA{0}.\\red{33}';
+        let translatedStr =
+         '\\blue{13}{,}\\tealE{3} \\tealE{9}{,}\\blue{4} \\redA{0}{,}\\red{33}';
+
+        MATH_RULES_LOCALES.DECIMAL_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+
+        translatedStr =
+         '\\blue{۱۳}{،}\\tealE{۳} \\tealE{۹}{،}\\blue{۴} \\redA{۰}{،}\\red{۳۳}';
+        MATH_RULES_LOCALES.ARABIC_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should NOT translate decimals wrapped in any tex commands', function() {
+        const englishStr = '\\hat{1}.\\tealE{3} \\tealE{9}.\\hat{4}';
+        let translatedStr = englishStr;
+
+        MATH_RULES_LOCALES.DECIMAL_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+
+        translatedStr = '\\hat{۱}.\\tealE{۳} \\tealE{۹}.\\hat{۴}';
+        MATH_RULES_LOCALES.ARABIC_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
 });
 
 describe('normalizeTranslatedMath', function() {
