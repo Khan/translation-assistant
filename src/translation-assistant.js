@@ -372,15 +372,17 @@ function createTemplate(englishStr, translatedStr, lang) {
 const MATH_RULES_LOCALES = {
     THOUSAND_SEP_AS_THIN_SPACE: ['cs', 'fr', 'de', 'lol',
          'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'],
-    THOUSAND_SEP_AS_DOT: ['pt', 'tr', 'da', 'sr', 'el'],
-    NO_THOUSAND_SEP: ['ko', 'ps'],
+    THOUSAND_SEP_AS_DOT: ['pt', 'tr', 'da', 'sr', 'el', 'id'],
+    NO_THOUSAND_SEP: ['ko', 'ps', 'ka'],
     DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'lol',
-            'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el'],
+            'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el', 'id', 'ka',
+            'ru'],
     // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
     // when \mathbin{.} becomes available for them
     TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da', 'bg',
             'lol'],
-    DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'lol'],
+    DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'lol', 'id',
+            'pt-pt', 'ru', 'nb'],
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
     ARABIC_COMMA: ['ps'],
     PERSO_ARABIC_NUMERALS: ['ps'],
