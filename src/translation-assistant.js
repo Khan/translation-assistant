@@ -66,8 +66,14 @@ function stringToGroupKey(str) {
     const texts = maths.map((math) => {
         const result = [];
 
-        allMatches(math, /\\text(?:bf)?{([^}]*)}/g,
-            (matches) => result.push(matches[1]));
+        const regex = new RegExp(
+            `${TEXT_REGEX.source}|${TEXTBF_REGEX.source}`, 'g');
+
+        allMatches(math, regex,
+            (matches) => result.push(
+                // TEXT_REGEX capture group is at index 1 and TEXTBF_REGEX at
+                // index 2. One of the groups is expected to be `undefined`.
+                matches[1] || matches[2]));
 
         // The natural language text is sorted so that even if the formula is
         // different and the natural language text is in a different order
@@ -429,6 +435,30 @@ function translateMath(math, lang) {
             .concat(MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
             MATH_RULES_LOCALES.NO_THOUSAND_SEP);
 
+    // Definition of regex for decimal numbers
+    // We need to allow for strings like '\\greenD{3}.\\blue{1}' or
+    // repeating decimals like '1/3 = 0.\\overline{3}'
+    //
+    // Colors currently used in KA strings taken from KaTeX definitions, see:
+    // https://github.com/KaTeX/KaTeX/blob/master/src/macros.js
+    //
+    // \\overline is handled elsewhere since it appears only
+    // on the right side of the decimal point
+    //
+    // These colors are appended by optional [A-Z]? to match all definitions
+    // from KaTeX. This will form a superset of actually defined colors,
+    // but that hardly matters here and is more future-proof if new colors
+    // were defined at some point
+    const katexColorMacros = ['blue', 'gold', 'gray', 'mint', 'green', 'red',
+         'maroon', 'orange', 'pink', 'purple', 'teal', 'kaBlue', 'kaGreen']
+         .join('|');
+
+    const integerPart = `[0-9]+|\\\\(?:${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
+    const decPart =
+       `[0-9]+|\\\\(?:overline|${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
+    const decimalNumberRegex =
+      new RegExp(`(${integerPart})\\.(${decPart})`, 'g');
+
     const mathTranslations = [
          // IMPORTANT NOTE: This MUST be the first regex
          // Convert thousand separators to a placeholder
@@ -439,13 +469,13 @@ function translateMath(math, lang) {
 
          // Decimal comma
          {langs: MATH_RULES_LOCALES.DECIMAL_COMMA,
-            regex: /([0-9])\.([0-9])/g, replace: '$1{,}$2'},
+            regex: decimalNumberRegex, replace: '$1{,}$2'},
 
          // Arabic decimal comma, see https://en.wikipedia.org/wiki/Comma
          // NOTE: At least in MathJax, this comma does not need braces,
          // but it feels safer to have them here.
          {langs: MATH_RULES_LOCALES.ARABIC_COMMA,
-            regex: /([0-9])\.([0-9])/g, replace: '$1{،}$2'},
+            regex: decimalNumberRegex, replace: '$1{،}$2'},
 
          // division sign as a colon
          {langs: MATH_RULES_LOCALES.DIV_AS_COLON,
