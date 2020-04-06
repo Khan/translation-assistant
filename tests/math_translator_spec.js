@@ -3,6 +3,7 @@
 const assert = require('assert');
 const {
     translateMath,
+    maybeTranslateMath,
     normalizeTranslatedMath,
     MATH_RULES_LOCALES,
 } = require('../lib/math-translator');
@@ -70,6 +71,15 @@ describe('MathTranslator (translateMath)', function() {
         MATH_RULES_LOCALES.TIMES_AS_CDOT.forEach(function(locale) {
             const englishStr = '2 \\times 2 = 4';
             const translatedStr = '2 \\cdot 2 = 4';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+
+        MATH_RULES_LOCALES.CDOT_AS_TIMES.forEach(function(locale) {
+            // NOTE(danielhollas): Cannot use numbers here, because
+            // CDOT_AS_TIMES includes Pashto which has different numerals
+            const englishStr = 'a \\cdot b';
+            const translatedStr = 'a \\times b';
             const outputStr = translateMath(englishStr, locale);
             assert.equal(outputStr, translatedStr);
         });
@@ -164,6 +174,7 @@ describe('MathTranslator (translateMath)', function() {
         // because some of them have different notation for repeating decimals
         // So we choose just one particular
         const locale = 'cs';
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
 
         const englishStr = '1.\\overline{3} + 9.\\overline{44}';
         let translatedStr = '1{,}\\overline{3} + 9{,}\\overline{44}';
@@ -179,8 +190,9 @@ describe('MathTranslator (translateMath)', function() {
 
     it('should translate \\overline in repeating decimals as \\dot',
     function() {
-        // FROM MATH_RULES_LOCALES.OVERLINE_AS_DOT
         const locale = 'bn';
+        assert(MATH_RULES_LOCALES.OVERLINE_AS_DOT.includes(locale));
+
         const englishStr = '1.\\overline{3} + 9.\\overline{44}';
         const translatedStr = '1.\\dot{3} + 9.\\dot{4}\\dot{4}';
         const outputStr = translateMath(englishStr, locale);
@@ -189,8 +201,9 @@ describe('MathTranslator (translateMath)', function() {
 
     it('should translate \\overline in repeating decimals as parentheses',
     function() {
-        // FROM MATH_RULES_LOCALES.OVERLINE_AS_PARENS
         const locale = 'pt-pt';
+        assert(MATH_RULES_LOCALES.OVERLINE_AS_PARENS.includes(locale));
+
         const englishStr = '1.\\overline{3} + 9.\\overline{44}';
         const translatedStr = '1{,}(3) + 9{,}(44)';
         const outputStr = translateMath(englishStr, locale);
@@ -307,3 +320,142 @@ describe('MathTranslator (normalizeTranslatedMath)', function() {
     });
 });
 
+describe('MathTranslator (maybeTranslateMath)', function() {
+
+    it('should return the same string if template is empty', function() {
+        MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.forEach(function(locale) {
+            const englishStr = '8 \\times 2 = 16';
+            const template = null;
+            const translatedStr = '8 \\times 2 = 16';
+            const output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
+        });
+    });
+
+    it('should maybe translate times to cdot based on template', function() {
+        MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.forEach(function(locale) {
+            const englishStr = '8 \\times 2 = 16';
+
+            const template1 = '4 \\cdot 1 = 4';
+            const translatedStr1 = '8 \\cdot 2 = 16';
+            const output1 = maybeTranslateMath(englishStr, template1, locale);
+            assert.equal(output1, translatedStr1);
+
+            const template2 = '4 \\times 1 = 4';
+            const translatedStr2 = '8 \\times 2 = 16';
+            const output2 = maybeTranslateMath(englishStr, template2, locale);
+            assert.equal(output2, translatedStr2);
+        });
+    });
+
+    it('should maybe translate cdot to times based on template', function() {
+        MATH_RULES_LOCALES.MAYBE_CDOT_AS_TIMES.forEach(function(locale) {
+            const englishStr = '8 \\cdot 2 = 16';
+
+            const template1 = '8 \\times 1 = 8';
+            const translatedStr1 = '8 \\times 2 = 16';
+            const output1 = maybeTranslateMath(englishStr, template1, locale);
+            assert.equal(output1, translatedStr1);
+
+            const template2 = '8 \\cdot 1 = 8';
+            const translatedStr2 = '8 \\cdot 2 = 16';
+            const output2 = maybeTranslateMath(englishStr, template2, locale);
+            assert.equal(output2, translatedStr2);
+        });
+    });
+
+    it('should maybe translate div to mathbin based on template', function() {
+        MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON.forEach(function(locale) {
+            const englishStr = '8 \\div 2 = 4';
+
+            const template1 = '4 \\mathbin{:} 2 = 2';
+            const translatedStr1 = '8 \\mathbin{:} 2 = 4';
+            const output1 = maybeTranslateMath(englishStr, template1, locale);
+            assert.equal(output1, translatedStr1);
+
+            const template2 = '4 \\div 2 = 2';
+            const translatedStr2 = '8 \\div 2 = 4';
+            const output2 = maybeTranslateMath(englishStr, template2, locale);
+            assert.equal(output2, translatedStr2);
+        });
+    });
+
+    it('should NOT translate if template has conflicting notation', function() {
+        MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON.forEach(function(locale) {
+            const englishStr = '8 \\div 2 = 16 \\div 4';
+            const template = '2 \\mathbin{:} 2 = 1 \\div 1';
+            const translatedStr = englishStr;
+            const output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
+        });
+
+        MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.forEach(function(locale) {
+            const englishStr = '8 \\times 2 = 16 \\times 1';
+            const template = '1 \\times 2 = 2 \\cdot 1';
+            const translatedStr = englishStr;
+            const output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
+        });
+
+        MATH_RULES_LOCALES.MAYBE_CDOT_AS_TIMES.forEach(function(locale) {
+            const englishStr = '8 \\cdot 2 = 16 \\cdot 1';
+            const template = '1 \\times 2 = 2 \\cdot 1';
+            const translatedStr = englishStr;
+
+            const output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
+        });
+    });
+});
+
+describe('MATH_RULES_LOCALES', function() {
+
+    it('should not have conflicting rules for multiplication', function() {
+        MATH_RULES_LOCALES.CDOT_AS_TIMES.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.TIMES_AS_CDOT.includes(locale));
+        });
+
+        MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.TIMES_AS_CDOT.includes(locale));
+        });
+
+        MATH_RULES_LOCALES.MAYBE_CDOT_AS_TIMES.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.CDOT_AS_TIMES.includes(locale));
+        });
+    });
+
+    it('should not have conflicting rules for multiplication', function() {
+        MATH_RULES_LOCALES.CDOT_AS_TIMES.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.TIMES_AS_CDOT.includes(locale));
+        });
+
+        MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.TIMES_AS_CDOT.includes(locale));
+        });
+
+        MATH_RULES_LOCALES.MAYBE_CDOT_AS_TIMES.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.CDOT_AS_TIMES.includes(locale));
+        });
+
+        assert.deepEqual(
+            MATH_RULES_LOCALES.MAYBE_CDOT_AS_TIMES,
+            MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT
+        );
+    });
+
+    it('should not have conflicting rules for division', function() {
+        MATH_RULES_LOCALES.DIV_AS_COLON.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON.includes(locale));
+        });
+    });
+
+    it('should not have conflicting rules for trig functions', function() {
+        MATH_RULES_LOCALES.COT_AS_COTG.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.COT_AS_CTG.includes(locale));
+        });
+
+        MATH_RULES_LOCALES.CSC_AS_COSSEC.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.CSC_AS_COSEC.includes(locale));
+        });
+    });
+});
