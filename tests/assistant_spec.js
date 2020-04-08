@@ -1,16 +1,19 @@
 /*global describe, it*/
 
 const assert = require('assert');
-const TranslationAssistant = require('../lib/translation-assistant');
+const {MathTranslator, TranslationAssistant} = require('../lib/translation-assistant');
 
 const {
     stringToGroupKey,
     createTemplate,
     populateTemplate,
+} = TranslationAssistant;
+
+const {
     translateMath,
     normalizeTranslatedMath,
     MATH_RULES_LOCALES,
-} = TranslationAssistant;
+} = MathTranslator;
 
 /**
  * Return a fake graphie string.
