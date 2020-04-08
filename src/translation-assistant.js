@@ -2,7 +2,8 @@
  * This file contains functions generating suggested translations.  See the
  * jsdocs for the 'suggest' function for more details.
  */
-
+const MathTranslator = require('./math-translator');
+const {translateMath, normalizeTranslatedMath} = MathTranslator;
 
 // Matches math delimited by $, e.g.
 // $x^2 + 2x + 1 = 0$
@@ -673,5 +674,4 @@ TranslationAssistant.stringToGroupKey = stringToGroupKey;
 TranslationAssistant.createTemplate = createTemplate;
 TranslationAssistant.populateTemplate = populateTemplate;
 
-exports.TranslationAssistant = TranslationAssistant;
-module.exports = exports;
+module.exports = TranslationAssistant;

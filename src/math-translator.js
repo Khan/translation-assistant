@@ -208,4 +208,4 @@ MathTranslator.translateMath = translateMath;
 MathTranslator.normalizeTranslatedMath = normalizeTranslatedMath;
 MathTranslator.MATH_RULES_LOCALES = MATH_RULES_LOCALES;
 
-exports.MathTranslator = MathTranslator;
+module.exports = MathTranslator;

@@ -7,7 +7,7 @@
     "lint": "eslint src tests",
     "test": "mocha --compilers js:babel/register tests",
     "build:add": "git add lib/",
-    "build": "babel --loose all src/math-translator.js src/translation-assistant.js -o lib/translation-assistant.js",
+    "build": "babel --loose all src/translation-assistant.js -o lib/translation-assistant.js && babel --loose all src/math-translator.js -o lib/math-translator.js",
     "watch_test": "mocha --watch --compilers js:babel/register tests",
     "watch_build": "babel --loose all --watch src/translation-assistant.js -o lib/translation-assistant.js"
   },
