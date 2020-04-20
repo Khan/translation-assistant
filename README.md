@@ -1,4 +1,5 @@
 # Translation Assistant
 
 Provides functions that analyze and suggest translations for similar strings
-based on an existing translation.
+based on an existing translation. Powers the Smart Translations feature in Khan
+Translation Editor.
