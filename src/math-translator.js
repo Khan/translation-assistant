@@ -1,5 +1,6 @@
 /**
  * This file contains functions for translating math notation
+ * as well as a list of locales that these functions should be applied to
  */
 
 /**
@@ -30,8 +31,8 @@ const MATH_RULES_LOCALES = {
  * Translates western-arabic numerals to others, see:
  * https://en.wikipedia.org/wiki/Eastern_Arabic_numerals
  *
- * @param {string} math A math expression to translate for locale.
- * @param {string} lang The locale of the translation language.
+ * @param {string} math A math expression to translate
+ * @param {string} lang The KA locale of the translation language.
  * @returns {string} The math expression with translated numerals.
  */
 function translateNumerals(math, lang) {
@@ -57,18 +58,18 @@ function translateNumerals(math, lang) {
 }
 
 /**
- * Handles any per language special case translations
- * e.g. thousand separators, decimal commas etc.
- * TODO(danielhollas): Split this into `translateNumbers` and
- * `translateOperators`
+ * Translates notation for numbers, such as decimal dots or thousand separators.
+ * Essentially implements `number.toLocaleString`,
+ * but uses KA locale and LaTeX notation.
+ * Translation of numerals is handled separately in translateNumerals.
  *
- * @param {string} math A math expression to translate for locale.
- * @param {string} lang The locale of the translation language.
- * @returns {string} The translated math expression.
+ * @param {string} math A math expression to translate
+ * @param {string} lang The KA locale of the translation language.
+ * @returns {string} The math expression with translated numbers.
  */
-function translateMath(math, lang) {
+function translateNumbers(math, lang) {
 
-    // These consts are used only here for manimupulating thousand separator
+    // These consts are used only here for manipulating thousand separator
     const placeholder = 'THSEP';
     const USThousandSeparatorRegex =
         new RegExp(`([0-9])${placeholder}([0-9])(?=[0-9]{2})`, 'g');
@@ -119,24 +120,6 @@ function translateMath(math, lang) {
          {langs: MATH_RULES_LOCALES.ARABIC_COMMA,
             regex: decimalNumberRegex, replace: '$1{،}$2'},
 
-         // division sign as a colon
-         {langs: MATH_RULES_LOCALES.DIV_AS_COLON,
-            regex: /\\div/g, replace: '\\mathbin{:}'},
-
-         // latin trig functions
-         {langs: MATH_RULES_LOCALES.SIN_AS_SEN,
-            regex: /\\sin/g, replace: '\\operatorname{sen}'},
-
-         // multiplication sign as a centered dot
-         {langs: MATH_RULES_LOCALES.TIMES_AS_CDOT,
-            regex: /\\times/g, replace: '\\cdot'},
-
-         // multiplication sign as a simple dot, a Bulgarian specialty
-         // TODO(danielhollas): not yet allowed by the linter
-         // TODO(danielhollas): add a test for this case
-         //{langs: ['bg'],
-         //   regex: /\\times/g, replace: '\\mathbin{.}'},
-
          // Thousand separator notations
 
          // No thousand separator
@@ -158,6 +141,61 @@ function translateMath(math, lang) {
         }
     });
 
+    return math;
+}
+
+/**
+ * Handles translations of LaTeX commands (\func{}) and other math notation
+ * e.g. binary operators, trig functions etc
+ *
+ * @param {string} math A math expression to translate
+ * @param {string} lang The KA locale of the translation language.
+ * @returns {string} The translated math expression.
+ */
+function translateMathOperators(math, lang) {
+
+    const mathTranslations = [
+         // division sign as a colon
+         {langs: MATH_RULES_LOCALES.DIV_AS_COLON,
+            regex: /\\div/g, replace: '\\mathbin{:}'},
+
+         // TODO(danielhollas): Add all trig functions
+         // latin trig functions
+         {langs: MATH_RULES_LOCALES.SIN_AS_SEN,
+            regex: /\\sin/g, replace: '\\operatorname{sen}'},
+
+         // multiplication sign as a centered dot
+         {langs: MATH_RULES_LOCALES.TIMES_AS_CDOT,
+            regex: /\\times/g, replace: '\\cdot'},
+
+         // multiplication sign as a simple dot, a Bulgarian specialty
+         // TODO(danielhollas): not yet allowed by the linter
+         // TODO(danielhollas): add a test for this case
+         //{langs: ['bg'],
+         //   regex: /\\times/g, replace: '\\mathbin{.}'},
+    ];
+
+    mathTranslations.forEach(function(element) {
+        if (element.langs.includes(lang)) {
+            math = math.replace(element.regex, element.replace);
+        }
+    });
+
+    return math;
+}
+
+/**
+ * Handles any per language special case translations
+ * e.g. thousand separators, decimal commas, math operators etc.
+ *
+ * @param {string} math A math expression to translate
+ * @param {string} lang The KA locale of the translation language.
+ * @returns {string} The translated math expression.
+ */
+function translateMath(math, lang) {
+    // The order here should not matter
+    math = translateMathOperators(math, lang);
+    math = translateNumbers(math, lang);
     math = translateNumerals(math, lang);
     return math;
 }
