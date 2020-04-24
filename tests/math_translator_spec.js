@@ -9,7 +9,7 @@ const {
     MATH_RULES_LOCALES,
 } = MathTranslator;
 
-describe('translateMath', function() {
+describe('MathTranslator (translateMath)', function() {
     it('should return the same string for en locale', function() {
         const englishStr = '1{,}000{,}000 \\times 9{,}000.400 \\div 2 = \\sin';
         const outputStr = translateMath(englishStr, 'en');
@@ -173,7 +173,7 @@ describe('translateMath', function() {
 
 });
 
-describe('normalizeTranslatedMath', function() {
+describe('MathTranslator (normalizeTranslatedMath)', function() {
     it('should strip extra braces around thousand separator as thin space',
     function() {
         const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
