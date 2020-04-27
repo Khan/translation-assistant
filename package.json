@@ -6,10 +6,10 @@
   "scripts": {
     "lint": "eslint src tests",
     "test": "mocha --compilers js:babel/register tests",
-    "build": "babel --loose all src/translation-assistant.js -o lib/translation-assistant.js",
     "build:add": "git add lib/",
+    "build": "babel --loose all src --out-dir lib",
     "watch_test": "mocha --watch --compilers js:babel/register tests",
-    "watch_build": "babel --loose all --watch src/translation-assistant.js -o lib/translation-assistant.js"
+    "watch_build": "babel --loose all --watch src --out-dir lib"
   },
   "repository": {
     "type": "git",
