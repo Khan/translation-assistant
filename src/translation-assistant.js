@@ -2,8 +2,7 @@
  * This file contains functions generating suggested translations.  See the
  * jsdocs for the 'suggest' function for more details.
  */
-const MathTranslator = require('./math-translator');
-const {translateMath, normalizeTranslatedMath} = MathTranslator;
+const {translateMath, normalizeTranslatedMath} = require('./math-translator');
 
 // Matches math delimited by $, e.g.
 // $x^2 + 2x + 1 = 0$

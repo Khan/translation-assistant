@@ -1,13 +1,11 @@
 /*global describe, it*/
 
 const assert = require('assert');
-const MathTranslator = require('../lib/math-translator');
-
 const {
     translateMath,
     normalizeTranslatedMath,
     MATH_RULES_LOCALES,
-} = MathTranslator;
+} = require('../lib/math-translator');
 
 describe('MathTranslator (translateMath)', function() {
     it('should return the same string for en locale', function() {
