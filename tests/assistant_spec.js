@@ -813,19 +813,21 @@ describe('TranslationAssistant (math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'de');
     });
 
-    it('should translate \\sin to \\sen for pt locale', function() {
+    it('should translate trig functions', function() {
         const allItems = [{
-            englishStr: 'from $\\sin \\theta$ to $3\\sin$',
-            translatedStr: 'fr $\\operatorname{sen} \\theta$ till ' +
-                           '$3\\operatorname{sen}$',
+            englishStr: 'from $\\sin\\tan\\cot\\csc$',
+            translatedStr: 'fr $\\operatorname{sen}\\operatorname{tg}' +
+                           '\\operatorname{cotg}\\operatorname{cossec}$',
         }];
         const itemsToTranslate = [{
-            englishStr: 'from $\\sin \\theta$ to $5$',
+            englishStr: 'from $\\sin\\cos\\tan\\cot\\csc\\sec$',
             translatedStr: '',
         }];
-        const translatedStrs = ['fr $\\operatorname{sen} \\theta$ till $5$'];
-
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
+        const translatedStrs = [
+            'fr $\\operatorname{sen}\\cos\\operatorname{tg}' +
+            '\\operatorname{cotg}\\operatorname{cossec}\\sec$',
+        ];
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt-pt');
     });
 });
 

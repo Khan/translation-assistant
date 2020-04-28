@@ -9,6 +9,7 @@
  * TODO(danielhollas): Need to update this when new langs join translations
  */
 const MATH_RULES_LOCALES = {
+    // Number formats
     THOUSAND_SEP_AS_THIN_SPACE: ['cs', 'fr', 'de', 'lol',
          'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'],
     THOUSAND_SEP_AS_DOT: ['pt', 'tr', 'da', 'sr', 'el', 'id'],
@@ -16,15 +17,22 @@ const MATH_RULES_LOCALES = {
     DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'lol',
             'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el', 'id', 'ka',
             'ru'],
+    ARABIC_COMMA: ['ps'],
+    PERSO_ARABIC_NUMERALS: ['ps'],
+    // Binary operators
     // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
     // when \mathbin{.} becomes available for them
     TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da', 'bg',
             'lol'],
     DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'lol', 'id',
             'pt-pt', 'ru', 'nb'],
+    // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
-    ARABIC_COMMA: ['ps'],
-    PERSO_ARABIC_NUMERALS: ['ps'],
+    TAN_AS_TG: ['pt', 'pt-pt'],
+    COT_AS_COTG: ['pt', 'pt-pt'],
+    COT_AS_CTG: ['az', 'bu'],
+    CSC_AS_COSEC: ['az', 'cs'],
+    CSC_AS_COSSEC: ['pt', 'pt-pt'],
 };
 
 /**
@@ -155,14 +163,10 @@ function translateNumbers(math, lang) {
 function translateMathOperators(math, lang) {
 
     const mathTranslations = [
+         // BINARY OPERATORS
          // division sign as a colon
          {langs: MATH_RULES_LOCALES.DIV_AS_COLON,
             regex: /\\div/g, replace: '\\mathbin{:}'},
-
-         // TODO(danielhollas): Add all trig functions
-         // latin trig functions
-         {langs: MATH_RULES_LOCALES.SIN_AS_SEN,
-            regex: /\\sin/g, replace: '\\operatorname{sen}'},
 
          // multiplication sign as a centered dot
          {langs: MATH_RULES_LOCALES.TIMES_AS_CDOT,
@@ -173,6 +177,28 @@ function translateMathOperators(math, lang) {
          // TODO(danielhollas): add a test for this case
          //{langs: ['bg'],
          //   regex: /\\times/g, replace: '\\mathbin{.}'},
+
+         // TRIG FUNCTIONS
+         // NOTE(danielhollas): In principle, some might want to use
+         // e.g. sin^{-1} instead of arcsin, but we'll keep it simple
+         // and that notation is confusing anyway (1/sin or arcsin?)
+         {langs: MATH_RULES_LOCALES.SIN_AS_SEN,
+            regex: /\\(arc)?sin/g, replace: '\\operatorname{$1sen}'},
+
+         {langs: MATH_RULES_LOCALES.TAN_AS_TG,
+            regex: /\\(arc)?tan/g, replace: '\\operatorname{$1tg}'},
+
+         {langs: MATH_RULES_LOCALES.COT_AS_COTG,
+            regex: /\\(arc)?cot/g, replace: '\\operatorname{$1cotg}'},
+
+         {langs: MATH_RULES_LOCALES.COT_AS_CTG,
+            regex: /\\(arc)?cot/g, replace: '\\operatorname{$1ctg}'},
+
+         {langs: MATH_RULES_LOCALES.CSC_AS_COSEC,
+            regex: /\\(arc)?csc/g, replace: '\\operatorname{$1cosec}'},
+
+         {langs: MATH_RULES_LOCALES.CSC_AS_COSSEC,
+            regex: /\\(arc)?csc/g, replace: '\\operatorname{$1cossec}'},
     ];
 
     mathTranslations.forEach(function(element) {
@@ -229,6 +255,14 @@ function normalizeTranslatedMath(math, lang) {
          // We cannot allow a literal space here, cause Tex would ignore it
          {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
             regex: /([0-9])\{?~\}?([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
+
+         // KaTeX seem to support a bit more trig functions then default LaTeX
+         // but we're using operatornames for them as well
+         // https://katex.org/?data=%7B%22displayMode%22%3Atrue%2C%22leqno%22%3Afalse%2C%22fleqn%22%3Afalse%2C%22throwOnError%22%3Atrue%2C%22errorColor%22%3A%22%23cc0000%22%2C%22strict%22%3A%22warn%22%2C%22trust%22%3Afalse%2C%22macros%22%3A%7B%22%5C%5Cf%22%3A%22f(%231)%22%7D%2C%22code%22%3A%22%25%20%5C%5Cf%20is%20defined%20as%20f(%231)%20using%20the%20macro%5Cn%5C%5Csin%20%5C%5Carcsin%20%5C%5Ccos%20%5C%5Carccos%20%5C%5C%5C%5C%20%5C%5Ctan%20%5C%5Carctan%20%5C%5Ctg%20%5C%5Carctg%20%5C%5C%5C%5C%5Cn%5C%5Ccot%20%5C%5Ccotg%20%5C%5Cctg%20%5C%5Coperatorname%7Barccot%7D%20%5C%5C%5C%5C%5Cn%5C%5Ccsc%20%5C%5Ccosec%20%5C%5Coperatorname%7Barccsc%7D%20%5C%5C%5C%5C%5Cn%5C%5Coperatorname%7Bsen%7D%7Bx%7D%20%5C%5Csin%7Bx%7D%20%5C%5Csin%20x%22%7D
+         // Do it for all langs, probably no need to be specific here
+         {langs: [].concat(...Object.values(MATH_RULES_LOCALES)),
+            regex: /\\(tg|arctg|cotg|ctg|cosec)/g,
+            replace: '\\operatorname{$1}'},
     ];
 
     mathNormalizations.forEach(function(element) {
