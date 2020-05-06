@@ -28,10 +28,10 @@ const MATH_RULES_LOCALES = {
             'pt-pt', 'ru', 'nb'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
-    TAN_AS_TG: ['pt', 'pt-pt'],
+    TAN_AS_TG: ['az', 'bg', 'hu', 'hy', 'pt', 'pt-pt'],
     COT_AS_COTG: ['pt', 'pt-pt'],
-    COT_AS_CTG: ['az', 'bu'],
-    CSC_AS_COSEC: ['az', 'cs'],
+    COT_AS_CTG: ['az', 'hu', 'hy', 'bg'],
+    CSC_AS_COSEC: ['az', 'bg', 'bn'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
 };
 
@@ -81,9 +81,9 @@ function translateNumbers(math, lang) {
     const placeholder = 'THSEP';
     const USThousandSeparatorRegex =
         new RegExp(`([0-9])${placeholder}([0-9])(?=[0-9]{2})`, 'g');
-    const thousandSeparatorLocales =
-            MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE
-            .concat(MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
+    const thousandSeparatorLocales = [].concat(
+            MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
+            MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
             MATH_RULES_LOCALES.NO_THOUSAND_SEP);
 
     // Definition of regex for decimal numbers
@@ -227,8 +227,11 @@ function translateMath(math, lang) {
 }
 
 /**
- * Perform regex substitutions on translated math strings
- * so that it matches math translations that we do in translateMath()
+ * Perform regex substitutions on user-translated math strings
+ * for math notations where we permit variations
+ * so that it matches math translations done in translateMath().
+ * Needed only for comparing translated and original strings in getMapping(),
+ * it does not change the emitted ST suggestions.
  *
  * @param {string} math A user-translated math expression.
  * @param {string} lang The locale of the translation language.
@@ -256,11 +259,18 @@ function normalizeTranslatedMath(math, lang) {
          {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
             regex: /([0-9])\{?~\}?([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
 
-         // KaTeX seem to support a bit more trig functions then default LaTeX
-         // but we're using operatornames for them as well
+         // KaTeX supports more trig functions then default LaTeX
+         // (\tg, \arctg, \cotg \ctg, \cosec)
+         // but we're using \operatorname for them as well in translateMath()
+         // In principle, they cannot be used by translators at the moment
+         // because they are blocked by linter. But we will permit them here
+         // in case the linter limitation is lifted in the future.
          // https://katex.org/?data=%7B%22displayMode%22%3Atrue%2C%22leqno%22%3Afalse%2C%22fleqn%22%3Afalse%2C%22throwOnError%22%3Atrue%2C%22errorColor%22%3A%22%23cc0000%22%2C%22strict%22%3A%22warn%22%2C%22trust%22%3Afalse%2C%22macros%22%3A%7B%22%5C%5Cf%22%3A%22f(%231)%22%7D%2C%22code%22%3A%22%25%20%5C%5Cf%20is%20defined%20as%20f(%231)%20using%20the%20macro%5Cn%5C%5Csin%20%5C%5Carcsin%20%5C%5Ccos%20%5C%5Carccos%20%5C%5C%5C%5C%20%5C%5Ctan%20%5C%5Carctan%20%5C%5Ctg%20%5C%5Carctg%20%5C%5C%5C%5C%5Cn%5C%5Ccot%20%5C%5Ccotg%20%5C%5Cctg%20%5C%5Coperatorname%7Barccot%7D%20%5C%5C%5C%5C%5Cn%5C%5Ccsc%20%5C%5Ccosec%20%5C%5Coperatorname%7Barccsc%7D%20%5C%5C%5C%5C%5Cn%5C%5Coperatorname%7Bsen%7D%7Bx%7D%20%5C%5Csin%7Bx%7D%20%5C%5Csin%20x%22%7D
-         // Do it for all langs, probably no need to be specific here
-         {langs: [].concat(...Object.values(MATH_RULES_LOCALES)),
+         {langs: Array.from(new Set([].concat(
+                 MATH_RULES_LOCALES.TAN_AS_TG,
+                 MATH_RULES_LOCALES.COT_AS_COTG,
+                 MATH_RULES_LOCALES.COT_AS_CTG,
+                 MATH_RULES_LOCALES.CSC_AS_COSEC))),
             regex: /\\(tg|arctg|cotg|ctg|cosec)/g,
             replace: '\\operatorname{$1}'},
     ];

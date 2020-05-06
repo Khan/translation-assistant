@@ -272,12 +272,16 @@ describe('MathTranslator (normalizeTranslatedMath)', function() {
     });
 
     it('use \\operatorname{} even for commands supported by KaTeX', function() {
-        const translatedStr = '\\tg \\arctg \\cotg \\ctg';
-        const normalizedStr =
-          '\\operatorname{tg} \\operatorname{arctg} ' +
-          '\\operatorname{cotg} \\operatorname{ctg}';
-        const outputStr = normalizeTranslatedMath(translatedStr, 'lol');
-        assert.equal(outputStr, normalizedStr);
+        const translatedStr1 = '\\tg\\arctg\\cotg';
+        const normalizedStr1 =  '\\operatorname{tg}\\operatorname{arctg}' +
+            '\\operatorname{cotg}';
+        const outputStr1 = normalizeTranslatedMath(translatedStr1, 'pt');
+        assert.equal(outputStr1, normalizedStr1);
+
+        const translatedStr2 = '\\ctg\\cosec';
+        const normalizedStr2 =  '\\operatorname{ctg}\\operatorname{cosec}';
+        const outputStr2 = normalizeTranslatedMath(translatedStr2, 'az');
+        assert.equal(outputStr2, normalizedStr2);
     });
 });
 

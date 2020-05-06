@@ -832,6 +832,7 @@ describe('TranslationAssistant (math-translate)', function() {
 });
 
 describe('TranslationAssistant (graphie)', function() {
+    // NOTE(danielhollas): This test is flaky, not sure why
     it('should handle multiple graphies on multiple lines', function() {
         const allItems = [{
             englishStr: `simplify ${graphie1}, answer ${graphie2}\n\n` +
