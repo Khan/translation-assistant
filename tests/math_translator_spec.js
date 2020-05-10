@@ -91,11 +91,52 @@ describe('MathTranslator (translateMath)', function() {
         assert.equal(outputStr, translatedStr);
     });
 
-    it('should translate notation for sinus for certain locales',
-    function() {
+    // Trig functions
+    it('should translate notation for sinus', function() {
         MATH_RULES_LOCALES.SIN_AS_SEN.forEach(function(locale) {
-            const englishStr = '\\sin \\theta';
-            const translatedStr = '\\operatorname{sen} \\theta';
+            const englishStr = '\\arcsin \\sin';
+            const translatedStr = '\\operatorname{arcsen} \\operatorname{sen}';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate notation for tangens', function() {
+        MATH_RULES_LOCALES.TAN_AS_TG.forEach(function(locale) {
+            const englishStr = '\\arctan\\tan';
+            const translatedStr = '\\operatorname{arctg}\\operatorname{tg}';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate notation for cotangens', function() {
+        MATH_RULES_LOCALES.COT_AS_COTG.forEach(function(locale) {
+            const englishStr = '\\arccot\\cot';
+            const translatedStr = '\\operatorname{arccotg}\\operatorname{cotg}';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+
+        MATH_RULES_LOCALES.COT_AS_CTG.forEach(function(locale) {
+            const englishStr = '\\arccot\\cot';
+            const translatedStr = '\\operatorname{arcctg}\\operatorname{ctg}';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate notation for cosecant', function() {
+        MATH_RULES_LOCALES.CSC_AS_COSSEC.forEach(function(locale) {
+            const englishStr = '\\csc \\theta';
+            const translatedStr = '\\operatorname{cossec} \\theta';
+            const outputStr = translateMath(englishStr, locale);
+            assert.equal(outputStr, translatedStr);
+        });
+
+        MATH_RULES_LOCALES.CSC_AS_COSEC.forEach(function(locale) {
+            const englishStr = '\\csc \\theta';
+            const translatedStr = '\\operatorname{cosec} \\theta';
             const outputStr = translateMath(englishStr, locale);
             assert.equal(outputStr, translatedStr);
         });
@@ -228,6 +269,19 @@ describe('MathTranslator (normalizeTranslatedMath)', function() {
         const normalizedStr = '1~000~000 + 9~000';
         const outputStr = normalizeTranslatedMath(translatedStr, 'en');
         assert.equal(outputStr, normalizedStr);
+    });
+
+    it('use \\operatorname{} even for commands supported by KaTeX', function() {
+        const translatedStr1 = '\\tg\\arctg\\cotg';
+        const normalizedStr1 =  '\\operatorname{tg}\\operatorname{arctg}' +
+            '\\operatorname{cotg}';
+        const outputStr1 = normalizeTranslatedMath(translatedStr1, 'pt');
+        assert.equal(outputStr1, normalizedStr1);
+
+        const translatedStr2 = '\\ctg\\cosec';
+        const normalizedStr2 =  '\\operatorname{ctg}\\operatorname{cosec}';
+        const outputStr2 = normalizeTranslatedMath(translatedStr2, 'az');
+        assert.equal(outputStr2, normalizedStr2);
     });
 });
 
