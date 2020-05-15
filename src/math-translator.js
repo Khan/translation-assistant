@@ -19,6 +19,11 @@ const MATH_RULES_LOCALES = {
             'ru'],
     ARABIC_COMMA: ['ps'],
     PERSO_ARABIC_NUMERALS: ['ps'],
+    // Notations for repeating decimals - 0.\overline{3}
+    // 0.(3)
+    OVERLINE_AS_DOT: ['bn'],
+    // 0.\dot{3}
+    OVERLINE_AS_PARENS: ['az', 'pt-pt'],
     // Binary operators
     // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
     // when \mathbin{.} becomes available for them
@@ -128,6 +133,12 @@ function translateNumbers(math, lang) {
          {langs: MATH_RULES_LOCALES.ARABIC_COMMA,
             regex: decimalNumberRegex, replace: '$1{،}$2'},
 
+         // Different notations for repeating decimals
+         {langs: MATH_RULES_LOCALES.OVERLINE_AS_PARENS,
+            regex: /\\overline\{(\d+)\}/g, replace: '($1)'},
+
+         // MATH_RULES_LOCALES.OVERLINE_AS_DOT needs special handling
+
          // Thousand separator notations
 
          // No thousand separator
@@ -148,6 +159,18 @@ function translateNumbers(math, lang) {
             math = math.replace(element.regex, element.replace);
         }
     });
+
+    // Special handling for OVERLINE_AS_DOT rule for repeating decimals
+    // we need to translate 0.\overline{12} as 0.\dot{1}\dot{2}
+    if (MATH_RULES_LOCALES.OVERLINE_AS_DOT.includes(lang)) {
+        const fromRegex = new RegExp(/\\overline\{(\d+)\}/, 'g');
+        let match;
+        while ((match = fromRegex.exec(math)) !== null) {
+            const numbers = match[1];
+            const replace = numbers.replace(/\d/g, '\\dot{$&}');
+            math = math.replace(match[0], replace);
+        }
+    }
 
     return math;
 }

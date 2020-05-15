@@ -160,19 +160,41 @@ describe('MathTranslator (translateMath)', function() {
     });
 
     it('should translate repeating decimal numbers', function() {
+        // We cannot iterate over all locales from DECIMAL_COMMA
+        // because some of them have different notation for repeating decimals
+        // So we choose just one particular
+        const locale = 'cs';
+
         const englishStr = '1.\\overline{3} + 9.\\overline{44}';
         let translatedStr = '1{,}\\overline{3} + 9{,}\\overline{44}';
-
-        MATH_RULES_LOCALES.DECIMAL_COMMA.forEach(function(locale) {
-            const outputStr = translateMath(englishStr, locale);
-            assert.equal(outputStr, translatedStr);
-        });
+        const outputStr = translateMath(englishStr, locale);
+        assert.equal(outputStr, translatedStr);
 
         translatedStr = '۱{،}\\overline{۳} + ۹{،}\\overline{۴۴}';
         MATH_RULES_LOCALES.ARABIC_COMMA.forEach(function(locale) {
             const outputStr = translateMath(englishStr, locale);
             assert.equal(outputStr, translatedStr);
         });
+    });
+
+    it('should translate \\overline in repeating decimals as \\dot',
+    function() {
+        // FROM MATH_RULES_LOCALES.OVERLINE_AS_DOT
+        const locale = 'bn';
+        const englishStr = '1.\\overline{3} + 9.\\overline{44}';
+        const translatedStr = '1.\\dot{3} + 9.\\dot{4}\\dot{4}';
+        const outputStr = translateMath(englishStr, locale);
+        assert.equal(outputStr, translatedStr);
+    });
+
+    it('should translate \\overline in repeating decimals as parentheses',
+    function() {
+        // FROM MATH_RULES_LOCALES.OVERLINE_AS_PARENS
+        const locale = 'pt-pt';
+        const englishStr = '1.\\overline{3} + 9.\\overline{44}';
+        const translatedStr = '1{,}(3) + 9{,}(44)';
+        const outputStr = translateMath(englishStr, locale);
+        assert.equal(outputStr, translatedStr);
     });
 
     it('should translate decimals wrapped in color commands', function() {
