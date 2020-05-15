@@ -547,10 +547,10 @@ describe('TranslationAssistant (math-translate)', function() {
             translatedStr: 'simplifyz $2{,}3$',
         }];
         const itemsToTranslate = [{
-            englishStr: 'simplify $2.9$',
+            englishStr: 'simplify $\\red{2.9}$',
             translatedStr: '',
         }];
-        const translatedStrs = ['simplifyz $2{,}9$'];
+        const translatedStrs = ['simplifyz $\\red{2{,}9}$'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'fr');
     });
@@ -871,9 +871,7 @@ describe('TranslationAssistant (math-translate)', function() {
 describe('TranslationAssistant (maybe-math-translate)', function() {
 
     it('should translate math according to a template', function() {
-        // Lang 'id' is in both MAYBE_TIMES_AS_CDOT and MAYBE_DIV_AS_COLON
         const lang = 'id';
-
         assert(MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.includes(lang));
         assert(MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON.includes(lang));
 
@@ -949,8 +947,10 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
     });
 
     it('should translate only math present in the template', function() {
-        // Lang 'id' is in both MAYBE_TIMES_AS_CDOT and MAYBE_DIV_AS_COLON
         const lang = 'id';
+        assert(MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.includes(lang));
+        assert(MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON.includes(lang));
+
         const allItems = [
             {englishStr: '$6 \\div 3$',
              translatedStr: '$6 \\mathbin{:} 3$',
@@ -1020,6 +1020,88 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
     */
+
+    it('should translate closed intervals in math-only strings', function() {
+        const lang = 'fr';
+        assert(MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(lang));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
+
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$(1,2) [2,b] [a,c) (1.2,5]$', translatedStr: ''},
+        ];
+        const translatedStrs = ['$]1;2[ [2;b] [a;c[ ]1{,}2;5]$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should detect and translate coordinates in math-only strings',
+    function() {
+        const lang = 'cs';
+        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
+
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$(2,1) (x,y) (\\green4,1.5)$', translatedStr: ''},
+        ];
+        const translatedStrs = ['$[2;1] [x;y] [\\green4;1{,}5]$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should translate both coordinates and intervals in separate math bits',
+    function() {
+        const lang = 'cs';
+        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+
+        const allItems = [
+            {englishStr: 'Intervals $[0,3] (-1,3)$ coordinates $(0,0)$',
+            translatedStr: 'Ints $[0;3] (-1;3)$ coords $[0;0]$'},
+        ];
+        const itemsToTranslate = [
+            {englishStr: 'Intervals $[0,3) [-5,\\red3)$ coordinates $(-1,-1)$',
+            translatedStr: ''},
+        ];
+        const translatedStrs = ['Ints $[0;3) [-5;\\red3)$ coords $[-1;-1]$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should translate open intervals according to a template', function() {
+        const lang = 'fr';
+        assert(MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(lang));
+
+        const allItems = [
+            {englishStr: 'Open intervals $(0,3) (\\blueD{-1},0)$',
+            translatedStr: 'Ints $]0~;3[ ]\\blueD{-1}~;0[$'},
+        ];
+        const itemsToTranslate = [
+            {englishStr: 'Open intervals $(0,3)$',
+            translatedStr: ''},
+        ];
+        const translatedStrs = ['Ints $]0~;3[$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should translate coordinates according to a template', function() {
+        const lang = 'cs';
+        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
+
+        const allItems = [
+            {englishStr: 'Coordinates $(0,3.\\overline{3}) (\\blueD{-1},0)$',
+            translatedStr: 'Coords $[0;3{,}\\overline{3}] [\\blueD{-1};0]$'},
+        ];
+        const itemsToTranslate = [
+            {englishStr: 'Coordinates $(0,3)$',
+            translatedStr: ''},
+        ];
+        const translatedStrs = ['Coords $[0;3]$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
 });
 
 describe('TranslationAssistant (graphie)', function() {
