@@ -16,7 +16,7 @@ const MATH_RULES_LOCALES = {
     NO_THOUSAND_SEP: ['ko', 'ps', 'ka'],
     DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'lol',
             'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el', 'id', 'ka',
-            'ru'],
+            'ru', 'ta'],
     ARABIC_COMMA: ['ps'],
     PERSO_ARABIC_NUMERALS: ['ps'],
     // Notations for repeating decimals - 0.\overline{3}
@@ -27,9 +27,9 @@ const MATH_RULES_LOCALES = {
     // Binary operators
     // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
     // when \mathbin{.} becomes available for them
-    TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da', 'bg',
-            'lol'],
-    DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'lol', 'id',
+    TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da', 'bg'],
+    CDOT_AS_TIMES: ['fr', 'ps', 'pt-pt', 'ta'],
+    DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'it',
             'pt-pt', 'ru', 'nb'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
@@ -38,6 +38,12 @@ const MATH_RULES_LOCALES = {
     COT_AS_CTG: ['az', 'hu', 'hy', 'bg'],
     CSC_AS_COSEC: ['az', 'bg', 'bn'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
+    // Rules conditional on the translated template
+    MAYBE_DIV_AS_COLON: ['id', 'lol'],
+    MAYBE_TIMES_AS_CDOT: ['az', 'bn', 'el', 'hi', 'hy', 'id', 'it', 'ja', 'ka',
+            'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
+    MAYBE_CDOT_AS_TIMES: ['az', 'bn', 'el', 'hi', 'hy', 'id', 'it', 'ja', 'ka',
+            'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
 };
 
 /**
@@ -195,6 +201,10 @@ function translateMathOperators(math, lang) {
          {langs: MATH_RULES_LOCALES.TIMES_AS_CDOT,
             regex: /\\times/g, replace: '\\cdot'},
 
+         // multiplication sign as x
+         {langs: MATH_RULES_LOCALES.CDOT_AS_TIMES,
+            regex: /\\cdot/g, replace: '\\times'},
+
          // multiplication sign as a simple dot, a Bulgarian specialty
          // TODO(danielhollas): not yet allowed by the linter
          // TODO(danielhollas): add a test for this case
@@ -307,14 +317,63 @@ function normalizeTranslatedMath(math, lang) {
     return math;
 }
 
-const MathTranslator = {};
+/**
+ * Maybe translate certain math notation to match the notation
+ * that the translator used in the template string.
+ *
+ * This is needed for cases where two or more translations are valid,
+ * e.g. \cdot versus \times, or where there's not a unique mapping from
+ * US notation (intervals and cartesian coordinates have the same notation
+ * in the US but different in many countries).
+ *
+ * The assumption here is that different math notations will not mingle
+ * in a single string, even though in principle a single string can very well
+ * contain both an interval (0,10) and cartesian point (0, 0) for example.
+ * Presumably, such cases are rare.
+ *
+ * Example: String '\\times' will be translated to '\\cdot' if and only if:
+ * 1. lang is in MAYBE_TIMES_AS_CDOT_LOCALES
+ * 2. the 'template' contains '\\cdot' at least once
+ * 3. the 'template' does NOT contain '\\times'
+ *
+ * @param {string} math A math expression to be translated
+ * @param {string} template User-translated template
+ * @param {string} lang The KA locale of the translation language.
+ * @returns {string} translated math expression.
+ */
+function maybeTranslateMath(math, template, lang) {
+    if (!template) {
+        return math;
+    }
 
-MathTranslator.translateMath = translateMath;
-MathTranslator.normalizeTranslatedMath = normalizeTranslatedMath;
-MathTranslator.MATH_RULES_LOCALES = MATH_RULES_LOCALES;
+    const maybeMathTranslations = [
+        // multiplication sign as a centered dot
+        {langs: MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT,
+            regex: /\\times/g, replace: '\\cdot'},
+         // multiplication sign as x
+        {langs: MATH_RULES_LOCALES.MAYBE_CDOT_AS_TIMES,
+            regex: /\\cdot/g, replace: '\\times'},
+         // division sign as a colon
+        {langs: MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON,
+            regex: /\\div/g, replace: '\\mathbin{:}'},
+    ];
+
+    maybeMathTranslations.forEach(function(el) {
+        if (el.langs.includes(lang) &&
+            template.includes(el.replace) &&
+            !template.match(el.regex)) {
+
+            math = math.replace(el.regex, el.replace);
+
+        }
+    });
+
+    return math;
+}
 
 module.exports = {
     translateMath: translateMath,
+    maybeTranslateMath: maybeTranslateMath,
     normalizeTranslatedMath: normalizeTranslatedMath,
     MATH_RULES_LOCALES: MATH_RULES_LOCALES,
 };

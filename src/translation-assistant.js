@@ -2,7 +2,11 @@
  * This file contains functions generating suggested translations.  See the
  * jsdocs for the 'suggest' function for more details.
  */
-const {translateMath, normalizeTranslatedMath} = require('./math-translator');
+const {
+    translateMath,
+    normalizeTranslatedMath,
+    maybeTranslateMath,
+} = require('./math-translator');
 
 // Matches math delimited by $, e.g.
 // $x^2 + 2x + 1 = 0$
@@ -136,7 +140,11 @@ function getMapping(
     const outputs = translatedStr.match(findRegex) || [];
 
     if (findRegex === MATH_REGEX) {
+        // Used in maybeTranslateMath() to pattern-match the translated math
+        // from the entire template
+        const allTranslatedMaths = outputs.join(' ');
         inputs = inputs
+            .map((input) => maybeTranslateMath(input, allTranslatedMaths, lang))
             .map((input) => translateMath(input, lang))
             .map((input) => replaceTextInMath(input, mathDictionary));
     }
@@ -145,9 +153,10 @@ function getMapping(
 
     outputs.forEach((output, outputIndex) => {
 
-        // NOTE(danielhollas): Currently, we will not offer smart translations
-        // if the user did not translate math according to our locale rules,
-        // normalizeTranslatedMath only handles some special cases.
+        // NOTE(danielhollas): Smart Translations will not be offered
+        // if translator did not translate math according to our locale rules,
+        // normalizeTranslatedMath only handles some special cases
+        // where we permit variations.
         if (findRegex === MATH_REGEX) {
             output = normalizeTranslatedMath(output, lang);
         }
@@ -222,6 +231,9 @@ function allMatches(text, regex, callback) {
 function getMathDictionary(englishStr, translatedStr, lang) {
     let inputs = englishStr.match(MATH_REGEX) || [];
     const outputs = translatedStr.match(MATH_REGEX) || [];
+    // Used in maybeTranslateMath() to pattern-match the translated math
+    // from the entire template
+    const allTranslatedMaths = outputs.join(' ');
 
     const inputMap = {};
     const outputMap = {};
@@ -231,8 +243,9 @@ function getMathDictionary(englishStr, translatedStr, lang) {
         [TEXTBF_REGEX, '__TEXTBF__'],
     ];
 
-    inputs = inputs.map(
-        (input) => translateMath(input, lang));
+    inputs = inputs
+        .map((input) => maybeTranslateMath(input, allTranslatedMaths, lang))
+        .map((input) => translateMath(input, lang));
 
     inputs.forEach((input) => {
         let normalized = input;
@@ -340,6 +353,8 @@ function createTemplate(englishStr, translatedStr, lang) {
                     .replace(GRAPHIE_REGEX, '__GRAPHIE__')
                     .replace(IMAGE_REGEX, '__IMAGE__')
                     .replace(WIDGET_REGEX, '__WIDGET__')),
+            // Needed in maybeTranslateMath()
+            translatedMaths: translatedStr.match(MATH_REGEX) || [],
             mathMapping: {
                 englishToTranslated:
                     getMapping(englishStr, translatedStr, lang, MATH_REGEX,
@@ -465,15 +480,19 @@ function populateTemplate(template, englishStr, lang) {
     const images = englishStr.match(IMAGE_REGEX) || [];
     const widgets = englishStr.match(WIDGET_REGEX) || [];
 
+    // Used in maybeTranslateMath() to pattern-match the translated math
+    // from the entire template
+    const allTranslatedMaths = template.translatedMaths.join(' ');
+
     let mathIndex = 0;
     let graphieIndex = 0;
     let imageIndex = 0;
     let widgetIndex = 0;
 
-    maths = maths.map((math) => {
-        const result = translateMath(math, lang);
-        return replaceTextInMath(result, template.mathDictionary);
-    });
+    maths = maths
+      .map((math) => maybeTranslateMath(math, allTranslatedMaths, lang))
+      .map((math) => translateMath(math, lang))
+      .map((math) => replaceTextInMath(math, template.mathDictionary));
 
     return englishLines.map((englishLine, index) => {
         const templateLine = template.lines[index];
@@ -557,20 +576,15 @@ class TranslationAssistant {
             const normalStr = stringToGroupKey(englishStr);
             const normalObj = JSON.parse(normalStr);
 
-            // Translate items that are only math, a graphie, an image, or a
-            // widget.
+            // Return items that are only a graphie, an image, or a widget
+            // unchanged. Presumably, even if the translator changed
+            // a graphie link in one string, they will not want to use the same
+            // link in a different string.
+            // Widgets should never be changed.
             // TODO(kevinb) handle multiple non-nl_text items
-            if (/^(__MATH__|__GRAPHIE__|__IMAGE__|__WIDGET__)$/
+            if (/^(__GRAPHIE__|__IMAGE__|__WIDGET__)$/
                     .test(normalObj.str)) {
-                if (normalObj.str === '__MATH__') {
-                    // Only translate the math if it doesn't include any
-                    // natural language text in \text and \textbf commands.
-                    if (englishStr.indexOf('\\text') === -1) {
-                        return [item, translateMath(englishStr, lang)];
-                    }
-                } else {
-                    return [item, englishStr];
-                }
+                return [item, englishStr];
             }
 
             if (suggestionGroups.hasOwnProperty(normalStr)) {
@@ -586,6 +600,16 @@ class TranslationAssistant {
                     const translatedStr = populateTemplate(
                         template, englishStr, lang);
                     return [item, translatedStr];
+                }
+            }
+
+            // Translate items that are only math even if there's no template.
+            // TODO(kevinb) handle multiple non-nl_text items
+            if (normalObj.str === '__MATH__') {
+                // Only translate the math if it doesn't include any
+                // natural language text in \text and \textbf commands.
+                if (englishStr.indexOf('\\text') === -1) {
+                    return [item, translateMath(englishStr, lang)];
                 }
             }
 

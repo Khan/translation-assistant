@@ -8,6 +8,7 @@ const {
     createTemplate,
     populateTemplate,
 } = TranslationAssistant;
+const {MATH_RULES_LOCALES} = require('../lib/math-translator');
 
 /**
  * Return a fake graphie string.
@@ -254,6 +255,24 @@ describe('TranslationAssistant', function() {
             assertSuggestions(allItems, itemsToTranslate, translatedStr);
         });
 
+        it('should return the same graphie even if translator changed one',
+        function() {
+            const allItems = [{
+                englishStr: graphie1,
+                translatedStr: graphie2,
+            }];
+            const itemsToTranslate = [{
+                englishStr: graphie3,
+                translatedStr: '',
+            }, {
+                englishStr: 'hello',
+                translatedStr: '',
+            }];
+            const translatedStr = [graphie3, null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStr);
+        });
+
         it('should return the same image link', function() {
             const imageLink = makeImageLink();
             const allItems = [];
@@ -265,6 +284,24 @@ describe('TranslationAssistant', function() {
                 translatedStr: '',
             }];
             const translatedStr = [imageLink, null];
+
+            assertSuggestions(allItems, itemsToTranslate, translatedStr);
+        });
+
+        it('should return the same imageLink even if translator changed one',
+        function() {
+            const allItems = [{
+                englishStr: image1,
+                translatedStr: image2,
+            }];
+            const itemsToTranslate = [{
+                englishStr: image3,
+                translatedStr: '',
+            }, {
+                englishStr: 'hello',
+                translatedStr: '',
+            }];
+            const translatedStr = [image3, null];
 
             assertSuggestions(allItems, itemsToTranslate, translatedStr);
         });
@@ -829,6 +866,160 @@ describe('TranslationAssistant (math-translate)', function() {
         ];
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt-pt');
     });
+});
+
+describe('TranslationAssistant (maybe-math-translate)', function() {
+
+    it('should translate math according to a template', function() {
+        // Lang 'id' is in both MAYBE_TIMES_AS_CDOT and MAYBE_DIV_AS_COLON
+        const lang = 'id';
+
+        assert(MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.includes(lang));
+        assert(MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON.includes(lang));
+
+        const allItems = [{
+            englishStr: 'simplify $2 \\times 2 \\div 2$',
+            translatedStr: 'simplifyz $2 \\cdot 2 \\mathbin{:} 2$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $4 \\div 1 \\times 5$',
+            translatedStr: '',
+        }];
+        // The translated template contained mathbin and cdot, so we will
+        // translate accordingly
+        const translatedStrs = ['simplifyz $4 \\mathbin{:} 1 \\cdot 5$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+
+        // Here the translator translated div as mathbin,
+        // but left times as multiplication operator.
+        const allItems2 = [{
+            englishStr: 'simplify $2 \\times 2 \\div 2$',
+            translatedStr: 'simplifyz $2 \\times 2 \\mathbin{:} 2$',
+        }];
+
+        // Notice times instead of cdot
+        const translatedStrs2 = ['simplifyz $4 \\mathbin{:} 1 \\times 5$'];
+
+        assertSuggestions(allItems2, itemsToTranslate, translatedStrs2, lang);
+    });
+
+    it('should handle maybeTranslateMath together with \\text', function() {
+        const lang = 'id';
+
+        const allItems = [{
+            englishStr: 'simplify $2\\text{to} 2\\times\\div2 \\textbf{equal}$',
+            translatedStr: 'simplifyz $2\\text{t} 2\\cdot\\div2 \\textbf{eq}$',
+        }];
+        const itemsToTranslate = [{
+            englishStr: 'simplify $4\\text{to} 4\\times\\div1 \\textbf{equal}$',
+            translatedStr: '',
+        }];
+        const translatedStrs =
+            ['simplifyz $4\\text{t} 4\\cdot\\div1 \\textbf{eq}$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should return the same math without a template', function() {
+        const lang = MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT[0];
+        const allItems = [];
+        const itemsToTranslate = [
+            {englishStr: '$3 \\times x = 2$', translatedStr: ''},
+            {englishStr: 'hello', translatedStr: ''},
+        ];
+        const translatedStrs = ['$3 \\times x = 2$', null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should NOT translate if template contains conflicting notation',
+    function() {
+        const lang = MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT[0];
+        const allItems = [
+            {englishStr: 'Simplify $3 \\times x \\times y$',
+            translatedStr: 'Simplifyz $3 \\cdot x \\times y$'},
+        ];
+        const itemsToTranslate = [
+            {englishStr: 'Simplify $6 \\times y$', translatedStr: ''},
+        ];
+        const translatedStrs = [null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should translate only math present in the template', function() {
+        // Lang 'id' is in both MAYBE_TIMES_AS_CDOT and MAYBE_DIV_AS_COLON
+        const lang = 'id';
+        const allItems = [
+            {englishStr: '$6 \\div 3$',
+             translatedStr: '$6 \\mathbin{:} 3$',
+            },
+        ];
+        const itemsToTranslate = [
+            // Because the template does not contatain \\times, we do not know
+            // how the translator wants to handle it. So we will do nothing
+            // and keep the original \\times
+            {englishStr: '$6 \\times y$', translatedStr: ''},
+            {englishStr: '$6 \\div y$', translatedStr: ''},
+            {englishStr: 'hello', translatedStr: ''},
+        ];
+        const translatedStrs = ['$6 \\times y$', '$6 \\mathbin{:} y$', null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    // In this test, we have multiple different math operators in a single
+    // template string so we know how the translator translated them and we can
+    // apply maybeMathTranslate to strings containing these notations
+    it('should translate multiple notations in math-only strings', function() {
+        // Lang 'id' is in both MAYBE_TIMES_AS_CDOT and MAYBE_DIV_AS_COLON
+        const lang = 'id';
+        const allItems = [
+            {englishStr: '$6 \\div 3 \\times y$',
+             translatedStr: '$6 \\mathbin{:} 3 \\cdot y$',
+            },
+        ];
+        const itemsToTranslate = [
+            // Notice these are separate strings with different math operators!
+            // This works because the template contained both \\div and \\times
+            {englishStr: '$6 \\times y$', translatedStr: ''},
+            {englishStr: '$6 \\div y$', translatedStr: ''},
+            {englishStr: 'hello', translatedStr: ''},
+        ];
+        const translatedStrs = ['$6 \\cdot y$', '$6 \\mathbin{:} y$', null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    // TODO(danielhollas): Make this work
+    /* For strings containing only math, it's very plausible that different
+     * strings will contain different math notation within a single exercise.
+     * In such a case, it would be nice if a translator could translate a couple
+     * of such strings, and the code would detect how he translated the math
+     * notation in all of them and apply the rules to the rest of the
+     * untranslated strings. However, this is currently not possible, because
+     * the code in `getSuggestionGroups()` creates the template from the first
+     * translatedStr and skips the rest.
+     */
+    /*
+    it('should translate math-only strings from multiple templates',
+        function() {
+        // Lang 'id' is in both MAYBE_TIMES_AS_CDOT and MAYBE_DIV_AS_COLON
+        const lang = 'id';
+        const allItems = [
+            {englishStr: '$6 \\div y$', translatedStr: '$6 \\mathbin{:} y$'},
+            {englishStr: '$3 \\times x$', translatedStr: '$3 \\cdot x$'},
+        ];
+        const itemsToTranslate = [
+            {englishStr: '$6 \\times y \\div 3$', translatedStr: ''},
+            {englishStr: 'hello', translatedStr: ''},
+        ];
+        const translatedStrs = ['$6 \\cdot y \\mathbin{:} 3$', null];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+    */
 });
 
 describe('TranslationAssistant (graphie)', function() {
