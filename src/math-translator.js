@@ -660,6 +660,15 @@ function translateIntervals(math, template, lang) {
             regex: leftClosedInterval, replace: `[$1${sep}$3[`},
         {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
             regex: rightClosedInterval, replace: `]$1${sep}$3]`},
+        // closed intervals with angle brackets
+        {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
+            regex: openInterval, replace: `($1${sep}$3)`},
+        {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
+            regex: closedInterval, replace: `<$1${sep}$3>`},
+        {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
+            regex: leftClosedInterval, replace: `<$1${sep}$3)`},
+        {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
+            regex: rightClosedInterval, replace: `($1${sep}$3>`},
     ];
 
     intervalTranslations.forEach(function(el) {
@@ -669,8 +678,9 @@ function translateIntervals(math, template, lang) {
     });
 
     // For all other languages not listed above,
-    // translated only the separator
-    if (MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(lang)) {
+    // translate only the separator
+    if (MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(lang) ||
+        MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS.includes(lang) ) {
         return math;
     }
 

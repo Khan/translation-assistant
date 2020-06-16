@@ -445,7 +445,7 @@ describe('MathTranslator (maybeTranslateMath)', function() {
     });
 
     it('should support semicolon as separator for all langs', function() {
-        const locale = 'cs';
+        const locale = 'pt';
         assert(!MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(locale));
 
         const englishStr = '[a, b] [1 ,d) (e , 2] (1,2)';
@@ -565,6 +565,20 @@ describe('MathTranslator (maybeTranslateMath)', function() {
         const englishStr = '(a, b) (1,2)';
         const template = ']1,2[';
         const translatedStr = ']a,b[ ]1,2[';
+        const output = maybeTranslateMath(englishStr, template, locale);
+        assert.equal(output, translatedStr);
+    });
+
+    it('should translate closed intervals with angle brackets', function() {
+        const locale = 'cs';
+        assert(
+            MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS.includes(locale)
+        );
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
+
+        const englishStr = '(a, b) [1,2) (1,2.1] [ \\red4, 5]';
+        const template = '';
+        const translatedStr = '(a;b) <1;2) (1;2.1> <\\red4;5>';
         const output = maybeTranslateMath(englishStr, template, locale);
         assert.equal(output, translatedStr);
     });
@@ -738,6 +752,14 @@ describe('MATH_RULES_LOCALES', function() {
     it('should not have conflicting rules for repeating decimals', function() {
         MATH_RULES_LOCALES.OVERLINE_AS_DOT.forEach(function(locale) {
             assert(! MATH_RULES_LOCALES.OVERLINE_AS_PARENS.includes(locale));
+        });
+    });
+
+    it('should not have conflicting rules for intervals', function() {
+        MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.forEach(function(locale) {
+            assert(
+            ! MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS.includes(locale)
+            );
         });
     });
 });

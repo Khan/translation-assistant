@@ -1054,16 +1054,18 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
     function() {
         const lang = 'cs';
         assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+        assert(MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS.includes(lang));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
 
         const allItems = [
             {englishStr: 'Intervals $[0,3] (-1,3)$ coordinates $(0,0)$',
-            translatedStr: 'Ints $[0;3] (-1;3)$ coords $[0;0]$'},
+            translatedStr: 'Ints $<0;3> (-1;3)$ coords $[0;0]$'},
         ];
         const itemsToTranslate = [
-            {englishStr: 'Intervals $[0,3) [-5,\\red3)$ coordinates $(-1,-1)$',
+            {englishStr: 'Intervals $[0,3) (-5,\\red3]$ coordinates $(-1,-1)$',
             translatedStr: ''},
         ];
-        const translatedStrs = ['Ints $[0;3) [-5;\\red3)$ coords $[-1;-1]$'];
+        const translatedStrs = ['Ints $<0;3) (-5;\\red3>$ coords $[-1;-1]$'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
