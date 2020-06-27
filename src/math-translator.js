@@ -45,10 +45,10 @@ const MATH_RULES_LOCALES = {
             'pt-pt', 'ru', 'nb'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
-    TAN_AS_TG: ['az', 'bg', 'hu', 'hy', 'pt', 'pt-pt'],
-    COT_AS_COTG: ['pt', 'pt-pt'],
+    TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'pt', 'pt-pt'],
+    COT_AS_COTG: ['cs', 'pt', 'pt-pt'],
     COT_AS_CTG: ['az', 'hu', 'hy', 'bg'],
-    CSC_AS_COSEC: ['az', 'bg', 'bn'],
+    CSC_AS_COSEC: ['az', 'bg', 'bn', 'cs'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
     // Rules conditional on the translated template
     MAYBE_DIV_AS_COLON: ['id', 'lol'],
@@ -661,14 +661,18 @@ function translateIntervals(math, template, lang) {
         {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
             regex: rightClosedInterval, replace: `]$1${sep}$3]`},
         // closed intervals with angle brackets
+        // We cannot use \langle|\rangle because of the linter
+        // so we insert equivalent unicode chars directly.
+        // U+27E8 | ⟨ | \xe2\x9f\xa8 | MATHEMATICAL LEFT ANGLE BRACKET
+        // U+27E9 | ⟩ | \xe2\x9f\xa9 | MATHEMATICAL RIGHT ANGLE BRACKET
         {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
             regex: openInterval, replace: `($1${sep}$3)`},
         {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
-            regex: closedInterval, replace: `<$1${sep}$3>`},
+            regex: closedInterval, replace: `⟨$1${sep}$3⟩`},
         {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
-            regex: leftClosedInterval, replace: `<$1${sep}$3)`},
+            regex: leftClosedInterval, replace: `⟨$1${sep}$3)`},
         {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
-            regex: rightClosedInterval, replace: `($1${sep}$3>`},
+            regex: rightClosedInterval, replace: `($1${sep}$3⟩`},
     ];
 
     intervalTranslations.forEach(function(el) {

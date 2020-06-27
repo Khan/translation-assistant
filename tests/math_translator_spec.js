@@ -574,11 +574,12 @@ describe('MathTranslator (maybeTranslateMath)', function() {
         assert(
             MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS.includes(locale)
         );
+        // With languages with decimal comma get semicolon as default separator
         assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
 
-        const englishStr = '(a, b) [1,2) (1,2.1] [ \\red4, 5]';
+        const englishStr = '(a, b) [1,2) (1,2.1] [ a, \\red5]';
         const template = '';
-        const translatedStr = '(a;b) <1;2) (1;2.1> <\\red4;5>';
+        const translatedStr = '(a;b) ⟨1;2) (1;2.1⟩ ⟨a;\\red5⟩';
         const output = maybeTranslateMath(englishStr, template, locale);
         assert.equal(output, translatedStr);
     });
