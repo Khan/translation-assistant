@@ -454,8 +454,18 @@ function populateTemplate(template, englishStr, lang) {
         // string.
         const englishDictionary = getMathDictionary(
             englishStr, englishStr, lang);
-        const englishMapping = getMapping(
-            englishStr, englishStr, 'en', MATH_REGEX, englishDictionary);
+
+        let englishMapping;
+
+        // This call to getMapping() should be safe because we're
+        // comparing English string with itself. Nevertheless, we're cautious
+        // so we don't crash the Translation Editor.
+        try {
+            englishMapping = getMapping(
+                englishStr, englishStr, 'en', MATH_REGEX, englishDictionary);
+        } catch (error) {
+            return undefined;
+        }
         // And verify that the math mapping is identical to the one in the
         // template.
         if (JSON.stringify(englishMapping) !== JSON.stringify(

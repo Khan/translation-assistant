@@ -74,6 +74,10 @@ const MATH_RULES_LOCALES = {
  */
 function translateMath(math, template, lang) {
 
+    if (lang === 'en') {
+        return math;
+    }
+
     // Need to call this one first, because the regexes
     // rely on US number formats
     math = maybeTranslateMath(math, template, lang);
@@ -273,6 +277,8 @@ function translateMathOperators(math, lang) {
  */
 function normalizeTranslatedMath(math, lang) {
 
+    if (lang === 'en') return math;
+
     const mathNormalizations = [
          // Strip superfluous curly braces around \\,
          // which is used as thousand separator in some locales
@@ -314,6 +320,14 @@ function normalizeTranslatedMath(math, lang) {
             math = math.replace(element.regex, element.replace);
         }
     });
+
+    // Remove whitespace in coordinates/intervals
+    // Applied to all langs because all langs can be affected by
+    // tranlatedCoordinates/translateIntervals/translateCoordinatesOrIntervals
+    const orderedPair = getOrderedPairRegexString(lang);
+    const coordsAndIntervals =
+        new RegExp(`([[⟨(\\]])${orderedPair}([[)⟩\\]])`, 'g');
+    math = math.replace(coordsAndIntervals, '$1$2$3$4$5');
 
     return math;
 }
@@ -477,7 +491,7 @@ function getEscapedDecimalSeparator(lang) {
  * @param {string} lang KA locale
  * @returns {string} string to be passed to RegExp constructor
  */
-function getRangeRegexString(lang) {
+function getOrderedPairRegexString(lang) {
     const katexColorMacros = `\\\\(?:${KATEX_BASE_COLORS.join('|')})[A-Z]?`;
     // Assuming single-letter variables and numbers below 1000
     // (without thousand separator)
@@ -515,7 +529,7 @@ function getRangeRegexString(lang) {
  */
 function detectClosedInterval(math) {
     const lang = 'en';
-    const interval = getRangeRegexString(lang);
+    const interval = getOrderedPairRegexString(lang);
     const closedInterval = `\\[${interval}\\]`;
     const leftClosedInterval = `\\[${interval}\\)`;
     const rightClosedInterval = `\\(${interval}\\]`;
@@ -537,7 +551,7 @@ function detectClosedInterval(math) {
  */
 function detectCoordinates(math) {
     const lang = 'en';
-    const coords = getRangeRegexString(lang);
+    const coords = getOrderedPairRegexString(lang);
     const coordsRegex = new RegExp(`\\(${coords}\\)`, 'g');
     let match;
     while ( (match = coordsRegex.exec(math)) !== null &&
@@ -596,10 +610,10 @@ function getSeparator(template, regex, lang) {
  * @returns {string} Translated string
  */
 function translateCoordinates(math, template, lang) {
-    const coordsUS = getRangeRegexString('en');
+    const coordsUS = getOrderedPairRegexString('en');
     const coordsRegexUS = new RegExp(`\\(${coordsUS}\\)`, 'g');
 
-    const coords = getRangeRegexString(lang);
+    const coords = getOrderedPairRegexString(lang);
     let coordsRegex;
     if (MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang)) {
         coordsRegex = new RegExp(`\\[${coords}\\]`);
@@ -635,7 +649,7 @@ function translateCoordinates(math, template, lang) {
  * @returns {string} Translated string
  */
 function translateIntervals(math, template, lang) {
-    const intervalUS = getRangeRegexString('en');
+    const intervalUS = getOrderedPairRegexString('en');
     const closedInterval = new RegExp(`\\[${intervalUS}\\]`, 'g');
     const openInterval = new RegExp(`\\(${intervalUS}\\)`, 'g');
     const leftClosedInterval = new RegExp(`\\[${intervalUS}\\)`, 'g');
@@ -645,7 +659,7 @@ function translateIntervals(math, template, lang) {
     // We expect that if template contains more intervals, they will have
     // the same separator. The can also include any whitespace chars.
     // Again, these need to be consistent in all intervals!
-    const interval = getRangeRegexString(lang);
+    const interval = getOrderedPairRegexString(lang);
     const generalInterval = new RegExp(`[[(\\]]${interval}[[)\\]]`);
 
     const sep = getSeparator(template, generalInterval, lang);
@@ -718,8 +732,8 @@ function translateCoordinatesOrOpenIntervals(math, template, lang) {
     if (!template) {
         return math;
     }
-    const rangeUS = getRangeRegexString('en');
-    const coordsOrOpenIntervalUS = new RegExp(`\\(${rangeUS}\\)`, 'g');
+    const orderedPairUS = getOrderedPairRegexString('en');
+    const coordsOrOpenIntervalUS = new RegExp(`\\(${orderedPairUS}\\)`, 'g');
 
     // First look into the English string
     let match = math.match(coordsOrOpenIntervalUS);
@@ -729,8 +743,8 @@ function translateCoordinatesOrOpenIntervals(math, template, lang) {
     // Now we know that the English string contains coordinates or intervals
     // Let's detect them in the template, if we fail,
     // we return prematurely
-    const range = getRangeRegexString(lang);
-    const coordsOrOpenInterval = new RegExp(`([[(\\]])${range}([[)\\]])`);
+    const orderedPair = getOrderedPairRegexString(lang);
+    const coordsOrOpenInterval = new RegExp(`([[(\\]])${orderedPair}([[)\\]])`);
     match = template.match(coordsOrOpenInterval);
     if (!match || match.length !== 6) {
         return math;

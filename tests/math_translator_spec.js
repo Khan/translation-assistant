@@ -320,6 +320,15 @@ describe('MathTranslator (normalizeTranslatedMath)', function() {
         const outputStr2 = normalizeTranslatedMath(translatedStr2, 'az');
         assert.equal(outputStr2, normalizedStr2);
     });
+
+    it('should strip extra space in coordinates/intervals',
+    function() {
+        // Striping space after opening brackets and before closing brackets
+        const translatedStr = '( 1,2 ) [ 3; 4] ] 1~,2[ ⟨ a;\\red5 ⟩';
+        const normalizedStr = '(1,2) [3; 4] ]1~,2[ ⟨a;\\red5⟩';
+        const outputStr = normalizeTranslatedMath(translatedStr, 'cs');
+        assert.equal(outputStr, normalizedStr);
+    });
 });
 
 describe('MathTranslator (maybeTranslateMath)', function() {

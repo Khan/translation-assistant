@@ -1050,6 +1050,40 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
 
+    it('should handle superflous spaces in English coordinates', function() {
+        const lang = 'cs';
+        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
+
+        const allItems = [
+            {englishStr: 'coordinates $( 0,1)$',
+             translatedStr: 'souradnice $[0;1]$'},
+        ];
+        const itemsToTranslate = [
+            {englishStr: 'coordinates $( 2, 1)$', translatedStr: ''},
+        ];
+        const translatedStrs = ['souradnice $[2;1]$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
+    it('should handle superflous spaces in translated coordinates', function() {
+        const lang = 'cs';
+        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
+
+        const allItems = [
+            {englishStr: 'coordinates $(0,1 )$',
+             translatedStr: 'souradnice $[0; 1 ]$'},
+        ];
+        const itemsToTranslate = [
+            {englishStr: 'coordinates $(2,1)$', translatedStr: ''},
+        ];
+        const translatedStrs = ['souradnice $[2; 1]$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
     it('should translate both coordinates and intervals in separate math bits',
     function() {
         const lang = 'cs';
