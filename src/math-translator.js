@@ -323,7 +323,7 @@ function normalizeTranslatedMath(math, lang) {
 
     // Remove whitespace in coordinates/intervals
     // Applied to all langs because all langs can be affected by
-    // tranlatedCoordinates/translateIntervals/translateCoordinatesOrIntervals
+    // translatedCoordinates/translateIntervals/translateCoordinatesOrIntervals
     const orderedPair = getOrderedPairRegexString(lang);
     const coordsAndIntervals =
         new RegExp(`([[⟨(\\]])${orderedPair}([[)⟩\\]])`, 'g');
@@ -422,6 +422,12 @@ const KATEX_BASE_COLORS = ['blue', 'gold', 'gray', 'mint', 'green', 'red',
  * We do not return the RegExp object, only the string
  * so that it can be combined into more complicated expressions.
  *
+ * By default, the regex contains two capturing groups:
+ * 1. integer part
+ * 2. decimal part
+ * This can be changed by passing capture=false,
+ * this variant is used to construct regexes for coordinates and intervals.
+ *
  * @param {string} lang The KA locale
  * @param {bool} capture whether to include capturing groups in regex
  * @returns {string} String to be passed into RegExp constructor.
@@ -519,10 +525,14 @@ function getOrderedPairRegexString(lang) {
 
 
 /**
- * Detect closed or half-closed intervals in US math expression.
+ * Detect closed or half-closed intervals in US math expression, such as
+ * '[a,b]', '[1,2)' or '(0,5]'
+ *
+ * (the expression can contain numbers or single-letter variables,
+ * see getOrderedpairRegexString)
  *
  * We cannot detect open intervals, because they have the same
- * notation as cartesian coordinates in the US
+ * notation as cartesian coordinates in the US.
  *
  * @param {string} math English math string
  * @returns {bool} true if math contains at least one interval
@@ -642,6 +652,7 @@ function translateCoordinates(math, template, lang) {
 
 /**
  * Translate notation for intervals (opened, closed, half-closed)
+ * e.g. '(-1,1)', '(0, a]' or '[\blue3,\red4]'
  *
  * @param {string} math A math expression to be translated
  * @param {string} template User-translated template
@@ -719,9 +730,13 @@ function translateIntervals(math, template, lang) {
 
 /**
  * Translate notation of coordinates or open intervals.
+ *
  * Since the US notation is the same, we cannot really distinguish
  * the two apart. So we will detect the notation from the user-translated
  * template and use it. Without the template, we return the same string.
+ *
+ * Example US strings:
+ * '(0,1)', '(a,b)', '(1.4, \red{5.6})'
  *
  * @param {string} math A math expression to be translated
  * @param {string} template User-translated template
