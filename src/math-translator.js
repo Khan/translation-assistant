@@ -69,6 +69,32 @@ const MATH_RULES_LOCALES = {
         'ky', 'lt', 'lv', 'mr', 'my', 'pa', 'pl', 'ro', 'ru', 'sv', 'ta', 'te',
         'tr', 'uk'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
+
+    // Geometry - lines, angles
+    // \angle ABC -> \widehat{ABC}
+    ANGLE_AS_WIDEHAT: ['fr'],
+    // m\angle ABC -> \widehat{ABC}
+    ANGLE_MEASURE_AS_WIDEHAT: ['fr', 'vi'],
+    // \angle ABC -> A\hat{B}C or \angle B -> \hat{A}
+    // TODO: There might be some more nuance
+    ANGLE_AS_HAT: ['it', 'pt', 'tr', 'vi'],
+    // \angle ABC -> ABC\angle
+    ANGLE_SWITCHED: ['hy'],
+    // m\angle ABC -> ABC\angle
+    ANGLE_MEASURE_SWITCHED: ['hy'],
+    // m\angle ABC -> |\angle ABC|
+    ANGLE_MEASURE_AS_VBAR: ['cs'],
+    // m\angle ABC -> \angle A\hat{B}C
+    ANGLE_MEASURE_AS_HAT: ['pt-pt'],
+    // m\angle ABC -> m(A\hat{B}C)
+    ANGLE_MEASURE_AS_MHAT: ['pt', 'ro'],
+    // m\angle ABC -> \angle ABC
+    ANGLE_MEASURE_WITHOUT_M: ['am', 'as', 'az', 'bg', 'bn', 'da', 'de', 'el',
+        'fa', 'fa-af', 'fv', 'gu', 'he', 'hi', 'hu', 'hy', 'id', 'is', 'it',
+        'ja', 'ka', 'kk', 'km', 'kn', 'ko', 'ky', 'lt', 'mk', 'mn', 'mr', 'my',
+        'nb', 'nl', 'pa', 'pl', 'ps', 'ru', 'rw', 'sl', 'so', 'sq', 'sr', 'sv',
+        'sw', 'ta', 'te', 'uk', 'ur', 'uz', 'xh', 'zh-hans', 'zh-hant', 'zu'],
+
     // Rules conditional on the translated template
     MAYBE_DIV_AS_COLON: ['id', 'lol'],
     MAYBE_TIMES_AS_CDOT: ['bn', 'el', 'gu', 'hi', 'id', 'it', 'ja', 'ka', 'kk',
@@ -310,6 +336,64 @@ function translateMathOperators(math, lang) {
 
         {langs: MATH_RULES_LOCALES.CSC_AS_COSSEC,
             regex: /\\(arc)?csc/g, replace: '\\operatorname{$1cossec}'},
+
+        // Let's deal with angle measures first!
+        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_VBAR,
+            // Cannot use lookbehind (ES2018 feature), so it's a bit awkward
+            // we try to match ' m \\angle ABC' or 'm \\angle x'
+            // Also: https://crowdin.com/translate/khanacademy/26316/enus-cs#5300605
+            regex:
+            /(^|[^a-zA-Z])m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            replace: '$1|\\angle $2|'},
+
+        // m\\angle ABC -> A\hat{B}C
+        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_HAT,
+            regex:
+            /(^|[^a-zA-Z])m\s*\\angle\s+([A-Z])([A-Z])([A-Z])(?![a-zA-Z])/g,
+            replace: '$1$2\\hat{$3}$4'},
+
+        // m\\angle ABC -> m(A\hat{B}C)
+        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_MHAT,
+            regex:
+            /(^|[^a-zA-Z])m\s*\\angle\s+([A-Z])([A-Z])([A-Z])(?![a-zA-Z])/g,
+            replace: '$1m($2\\hat{$3}$4)'},
+
+        // m\\angle ABC -> \\angle ABC
+        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_WITHOUT_M,
+            regex:
+            /(^|[^a-zA-Z])m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            replace: '$1\\angle $2'},
+
+        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_WIDEHAT,
+            regex:
+            /(^|[^a-zA-Z])m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            replace: '$1\\angle $2'},
+
+        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_SWITCHED,
+            regex:
+            /(^|[^a-zA-Z])m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            replace: '$1 $2\\angle'},
+
+
+        {langs: MATH_RULES_LOCALES.ANGLE_AS_WIDEHAT,
+            regex: /\\angle\s+([A-Z]{3})(?![a-zA-Z])/g,
+            replace: '\\widehat{$1}'},
+
+        {langs: MATH_RULES_LOCALES.ANGLE_SWITCHED,
+            regex:
+            /\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            replace: '$1\\angle'},
+
+        // \\angle BAC-> B\hat{A}C
+        {langs: MATH_RULES_LOCALES.ANGLE_AS_HAT,
+            regex: /\\angle\s+([A-Z])([A-Z])([A-Z])(?![a-zA-Z])/g,
+            replace: '$1\\hat{$2}$3'},
+
+        // \\angle A -> \hat{A}
+        {langs: MATH_RULES_LOCALES.ANGLE_AS_HAT,
+            regex: /\\angle\s+([A-Z])(?![a-zA-Z])/g,
+            replace: '\\hat{$1}'},
+
     ];
 
     mathTranslations.forEach(function(element) {

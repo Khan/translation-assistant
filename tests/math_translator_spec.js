@@ -265,6 +265,85 @@ describe('MathTranslator (translateMath)', function() {
         });
     });
 
+    it('should translate angle and angle measure with widehat', function() {
+        const englishStr = '\\blueD{\\angle XYZ} 3 \\angle ABC' +
+            ' m\\angle XYZ = 60';
+        const translatedStr = '\\blueD{\\widehat{XYZ}} 3 \\widehat{ABC}' +
+            ' \\widehat{XYZ} = 60';
+
+        MATH_RULES_LOCALES.ANGLE_AS_WIDEHAT.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, '', locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate angle with hat', function() {
+        const englishStr = '\\blueD{\\angle XYZ} 3 \\angle A';
+        const translatedStr = '\\blueD{X\\hat{Y}Z} 3 \\hat{A}';
+
+        MATH_RULES_LOCALES.ANGLE_AS_HAT.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, '', locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate angle measure without m', function() {
+        const locale = 'bg';
+        assert(MATH_RULES_LOCALES.ANGLE_MEASURE_WITHOUT_M.includes(locale));
+        const englishStr = 'm \\angle ABC m\\angle x';
+        const translatedStr = '\\angle ABC \\angle x';
+
+        const outputStr = translateMath(englishStr, '', locale);
+        assert.equal(outputStr, translatedStr);
+    });
+
+    it('should switch angle notation', function() {
+        const locale = 'hy';
+        assert(MATH_RULES_LOCALES.ANGLE_SWITCHED.includes(locale));
+        const englishStr = 'm \\angle ABC \\angle x';
+        const translatedStr = 'ABC\\angle x\\angle';
+
+        const outputStr = translateMath(englishStr, '', locale);
+        assert.equal(outputStr, translatedStr);
+    });
+
+    it('should translate angle measure with hat', function() {
+        const englishStr = 'm \\angle ABC';
+        const translatedStr = 'A\\hat{B}C';
+
+        MATH_RULES_LOCALES.ANGLE_MEASURE_AS_HAT.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, '', locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate angle measure with m and hat', function() {
+        const englishStr = 'm \\angle ABC';
+        const translatedStr = 'm(A\\hat{B}C)';
+
+        MATH_RULES_LOCALES.ANGLE_MEASURE_AS_MHAT.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, '', locale);
+            assert.equal(outputStr, translatedStr);
+        });
+    });
+
+    it('should translate angle measure with vertical bars', function() {
+        const englishStr = 'm \\angle ABC m\\angle x';
+        const translatedStr = '|\\angle ABC| |\\angle x|';
+
+        MATH_RULES_LOCALES.ANGLE_MEASURE_AS_VBAR.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, '', locale);
+            assert.equal(outputStr, translatedStr);
+        });
+
+        // Should not match if testm as angle measure
+        const englishStr2 = 'testm \\angle ABC';
+        const translatedStr2 = 'testm \\angle ABC';
+        MATH_RULES_LOCALES.ANGLE_MEASURE_AS_VBAR.forEach(function(locale) {
+            const outputStr = translateMath(englishStr2, '', locale);
+            assert.equal(outputStr, translatedStr2);
+        });
+    });
 });
 
 describe('MathTranslator (normalizeTranslatedMath)', function() {
