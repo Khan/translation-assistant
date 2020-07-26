@@ -30,7 +30,7 @@ or to do it automatically:
 git config blame.ignoreRevsFile .git-blame-ignore-revs
 ```
 
-## Tests and test coverage
+### Tests and test coverage
 
 To run the tests:
 ```sh
@@ -42,15 +42,17 @@ To run the tests with test coverage, and report the results as text:
 npm run build:coverage && npm run test:coverage
 ```
 
+### Deploying to webapp
+
 This repository is deployed to `webapp` as a git submodule 
 in `webapp/third_party/javascript-khansrc/`.
 
-To test the webapp build, use:
+To test the webapp build, run:
 ```sh
 yarn run build:webpack-prod-local
 ```
 
-To test the integration with the Translation Editor, use:
+To test the integration with the Translation Editor, run:
 ```sh
 yarn test javascript/manticore-package/
 ```
