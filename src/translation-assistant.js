@@ -5,7 +5,6 @@
 const {
     translateMath,
     normalizeTranslatedMath,
-    maybeTranslateMath,
 } = require('./math-translator');
 
 // Matches math delimited by $, e.g.
@@ -144,8 +143,7 @@ function getMapping(
         // from the entire template
         const allTranslatedMaths = outputs.join(' ');
         inputs = inputs
-            .map((input) => maybeTranslateMath(input, allTranslatedMaths, lang))
-            .map((input) => translateMath(input, lang))
+            .map((input) => translateMath(input, allTranslatedMaths, lang))
             .map((input) => replaceTextInMath(input, mathDictionary));
     }
 
@@ -234,6 +232,8 @@ function getMathDictionary(englishStr, translatedStr, lang) {
     // Used in maybeTranslateMath() to pattern-match the translated math
     // from the entire template
     const allTranslatedMaths = outputs.join(' ');
+    inputs = inputs.map((input) =>
+        translateMath(input, allTranslatedMaths, lang));
 
     const inputMap = {};
     const outputMap = {};
@@ -242,10 +242,6 @@ function getMathDictionary(englishStr, translatedStr, lang) {
         [TEXT_REGEX, '__TEXT__'],
         [TEXTBF_REGEX, '__TEXTBF__'],
     ];
-
-    inputs = inputs
-        .map((input) => maybeTranslateMath(input, allTranslatedMaths, lang))
-        .map((input) => translateMath(input, lang));
 
     inputs.forEach((input) => {
         let normalized = input;
@@ -458,8 +454,20 @@ function populateTemplate(template, englishStr, lang) {
         // string.
         const englishDictionary = getMathDictionary(
             englishStr, englishStr, lang);
-        const englishMapping = getMapping(
-            englishStr, englishStr, 'en', MATH_REGEX, englishDictionary);
+
+        let englishMapping;
+
+        // This call to getMapping() should be safe because we're
+        // comparing English string with itself. Nevertheless, we're cautious
+        // so we don't crash the Translation Editor.
+        try {
+            englishMapping = getMapping(
+                englishStr, englishStr, 'en', MATH_REGEX, englishDictionary);
+        } catch (error) {
+            console.error(  // eslint-disable-line no-console
+                'Unexpected error in TranslationAssistant.populateTemplate');
+            return undefined;
+        }
         // And verify that the math mapping is identical to the one in the
         // template.
         if (JSON.stringify(englishMapping) !== JSON.stringify(
@@ -480,8 +488,8 @@ function populateTemplate(template, englishStr, lang) {
     const images = englishStr.match(IMAGE_REGEX) || [];
     const widgets = englishStr.match(WIDGET_REGEX) || [];
 
-    // Used in maybeTranslateMath() to pattern-match the translated math
-    // from the entire template
+    // Used in maybeTranslateMath() (called in translateMath)
+    // to pattern-match the translated math from the entire template
     const allTranslatedMaths = template.translatedMaths.join(' ');
 
     let mathIndex = 0;
@@ -490,8 +498,7 @@ function populateTemplate(template, englishStr, lang) {
     let widgetIndex = 0;
 
     maths = maths
-      .map((math) => maybeTranslateMath(math, allTranslatedMaths, lang))
-      .map((math) => translateMath(math, lang))
+      .map((math) => translateMath(math, allTranslatedMaths, lang))
       .map((math) => replaceTextInMath(math, template.mathDictionary));
 
     return englishLines.map((englishLine, index) => {
@@ -609,7 +616,7 @@ class TranslationAssistant {
                 // Only translate the math if it doesn't include any
                 // natural language text in \text and \textbf commands.
                 if (englishStr.indexOf('\\text') === -1) {
-                    return [item, translateMath(englishStr, lang)];
+                    return [item, translateMath(englishStr, '', lang)];
                 }
             }
 

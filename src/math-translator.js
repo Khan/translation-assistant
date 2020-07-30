@@ -1,6 +1,6 @@
 /**
  * This file contains functions for translating math notation
- * as well as a list of locales that these functions should be applied to
+ * as well as a list of locales that these functions should be applied to.
  */
 
 /**
@@ -13,38 +13,81 @@ const MATH_RULES_LOCALES = {
     THOUSAND_SEP_AS_THIN_SPACE: ['cs', 'fr', 'de', 'lol',
          'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'],
     THOUSAND_SEP_AS_DOT: ['pt', 'tr', 'da', 'sr', 'el', 'id'],
-    NO_THOUSAND_SEP: ['ko', 'ps', 'ka'],
+    NO_THOUSAND_SEP: ['ko', 'ps', 'ka', 'hy'],
     DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'lol',
             'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el', 'id', 'ka',
-            'ru', 'ta'],
+            'ru', 'ta', 'hy'],
     ARABIC_COMMA: ['ps'],
     PERSO_ARABIC_NUMERALS: ['ps'],
     // Notations for repeating decimals - 0.\overline{3}
-    // 0.(3)
-    OVERLINE_AS_DOT: ['bn'],
     // 0.\dot{3}
-    OVERLINE_AS_PARENS: ['az', 'pt-pt'],
+    OVERLINE_AS_DOT: ['bn'],
+    // 0.(3)
+    OVERLINE_AS_PARENS: ['az', 'pt-pt', 'hy', 'pl'],
+
+    // Intervals and cartesian coordinates
+    // (a,b) - US open interval or coordinates
+    // [a,b] - US closed interval
+    // [a,b), (a, b] - US half open interval
+    //
+    // Inverted brackets notation for open intervals
+    // (a,b) -> ]a,b[
+    OPEN_INT_AS_BRACKETS: ['da', 'fr', 'hu', 'pt-pt'],
+    CLOSED_INT_AS_ANGLE_BRACKETS: ['cs'],
+    COORDS_AS_BRACKETS: ['cs'],
     // Binary operators
     // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
     // when \mathbin{.} becomes available for them
-    TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'sv', 'da', 'bg'],
+    TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'hy', 'sv',
+        'da', 'bg'],
     CDOT_AS_TIMES: ['fr', 'ps', 'pt-pt', 'ta'],
     DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'it',
             'pt-pt', 'ru', 'nb'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
-    TAN_AS_TG: ['az', 'bg', 'hu', 'hy', 'pt', 'pt-pt'],
-    COT_AS_COTG: ['pt', 'pt-pt'],
+    TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'pt', 'pt-pt'],
+    COT_AS_COTG: ['cs', 'pt', 'pt-pt'],
     COT_AS_CTG: ['az', 'hu', 'hy', 'bg'],
-    CSC_AS_COSEC: ['az', 'bg', 'bn'],
+    CSC_AS_COSEC: ['az', 'bg', 'bn', 'cs'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
     // Rules conditional on the translated template
     MAYBE_DIV_AS_COLON: ['id', 'lol'],
-    MAYBE_TIMES_AS_CDOT: ['az', 'bn', 'el', 'hi', 'hy', 'id', 'it', 'ja', 'ka',
+    MAYBE_TIMES_AS_CDOT: ['az', 'bn', 'el', 'hi', 'id', 'it', 'ja', 'ka',
             'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
-    MAYBE_CDOT_AS_TIMES: ['az', 'bn', 'el', 'hi', 'hy', 'id', 'it', 'ja', 'ka',
+    MAYBE_CDOT_AS_TIMES: ['az', 'bn', 'el', 'hi', 'id', 'it', 'ja', 'ka',
             'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
 };
+
+
+/**
+ * Translates math notation in English strings to match
+ * notation for a given language, such as thousand separators,
+ * decimal commas, math operators etc.
+ *
+ * This function serves as an interface to all the other functions
+ * in this file.
+ *
+ * @param {string} math math expression to translate
+ * @param {string} template User-translated template
+ * @param {string} lang KA locale of the translation language.
+ * @returns {string} translated math expression.
+ */
+function translateMath(math, template, lang) {
+
+    if (lang === 'en') {
+        return math;
+    }
+
+    // Need to call this one first, because the regexes
+    // rely on US number formats
+    math = maybeTranslateMath(math, template, lang);
+
+    math = translateMathOperators(math, lang);
+    math = translateNumbers(math, lang);
+    // This one needs to be last
+    math = translateNumerals(math, lang);
+    return math;
+}
 
 /**
  * Translates western-arabic numerals to others, see:
@@ -90,36 +133,14 @@ function translateNumbers(math, lang) {
 
     // These consts are used only here for manipulating thousand separator
     const placeholder = 'THSEP';
-    const USThousandSeparatorRegex =
+    const thousandSeparatorRegex =
         new RegExp(`([0-9])${placeholder}([0-9])(?=[0-9]{2})`, 'g');
     const thousandSeparatorLocales = [].concat(
             MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
             MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
             MATH_RULES_LOCALES.NO_THOUSAND_SEP);
 
-    // Definition of regex for decimal numbers
-    // We need to allow for strings like '\\greenD{3}.\\blue{1}' or
-    // repeating decimals like '1/3 = 0.\\overline{3}'
-    //
-    // Colors currently used in KA strings taken from KaTeX definitions, see:
-    // https://github.com/KaTeX/KaTeX/blob/master/src/macros.js
-    //
-    // \\overline is handled elsewhere since it appears only
-    // on the right side of the decimal point
-    //
-    // These colors are appended by optional [A-Z]? to match all definitions
-    // from KaTeX. This will form a superset of actually defined colors,
-    // but that hardly matters here and is more future-proof if new colors
-    // were defined at some point
-    const katexColorMacros = ['blue', 'gold', 'gray', 'mint', 'green', 'red',
-         'maroon', 'orange', 'pink', 'purple', 'teal', 'kaBlue', 'kaGreen']
-         .join('|');
-
-    const integerPart = `[0-9]+|\\\\(?:${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
-    const decPart =
-       `[0-9]+|\\\\(?:overline|${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
-    const decimalNumberRegex =
-      new RegExp(`(${integerPart})\\.(${decPart})`, 'g');
+    const decimalNumberRegex = new RegExp(getDecNumberRegexString('en'), 'g');
 
     const mathTranslations = [
          // IMPORTANT NOTE: This MUST be the first regex
@@ -149,15 +170,15 @@ function translateNumbers(math, lang) {
 
          // No thousand separator
          {langs: MATH_RULES_LOCALES.NO_THOUSAND_SEP,
-            regex: USThousandSeparatorRegex, replace: '$1$2'},
+            regex: thousandSeparatorRegex, replace: '$1$2'},
 
          // Thousand separator as a dot
          {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
-            regex: USThousandSeparatorRegex, replace: '$1.$2'},
+            regex: thousandSeparatorRegex, replace: '$1.$2'},
 
          // Thousand separator as a thin space (\, in Tex)
          {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
-            regex: USThousandSeparatorRegex, replace: '$1\\,$2'},
+            regex: thousandSeparatorRegex, replace: '$1\\,$2'},
     ];
 
     mathTranslations.forEach(function(element) {
@@ -244,22 +265,6 @@ function translateMathOperators(math, lang) {
 }
 
 /**
- * Handles any per language special case translations
- * e.g. thousand separators, decimal commas, math operators etc.
- *
- * @param {string} math A math expression to translate
- * @param {string} lang The KA locale of the translation language.
- * @returns {string} The translated math expression.
- */
-function translateMath(math, lang) {
-    // The order here should not matter
-    math = translateMathOperators(math, lang);
-    math = translateNumbers(math, lang);
-    math = translateNumerals(math, lang);
-    return math;
-}
-
-/**
  * Perform regex substitutions on user-translated math strings
  * for math notations where we permit variations
  * so that it matches math translations done in translateMath().
@@ -271,6 +276,8 @@ function translateMath(math, lang) {
  * @returns {string} The translated math expression.
  */
 function normalizeTranslatedMath(math, lang) {
+
+    if (lang === 'en') return math;
 
     const mathNormalizations = [
          // Strip superfluous curly braces around \\,
@@ -314,6 +321,14 @@ function normalizeTranslatedMath(math, lang) {
         }
     });
 
+    // Remove whitespace in coordinates/intervals
+    // Applied to all langs because all langs can be affected by
+    // translatedCoordinates/translateIntervals/translateCoordinatesOrIntervals
+    const orderedPair = getOrderedPairRegexString(lang);
+    const coordsAndIntervals =
+        new RegExp(`([[⟨(\\]])${orderedPair}([[)⟩\\]])`, 'g');
+    math = math.replace(coordsAndIntervals, '$1$2$3$4$5');
+
     return math;
 }
 
@@ -342,6 +357,25 @@ function normalizeTranslatedMath(math, lang) {
  * @returns {string} translated math expression.
  */
 function maybeTranslateMath(math, template, lang) {
+
+    // A heuristic for intervals and coordinates:
+    // We assume that a single string will not mix intervals and coordinates
+    // 1. Try to find closed/half-closed intervals
+    // 2. If not found, try to detect coordinates
+    // (for details, see comment for detectCoordinates())
+    // 3. For certain strings such as (1,2), we cannot differentiate
+    // between coordinates and intervals so we will extract the notation
+    // from the translated template.
+    if (detectClosedInterval(math)) {
+        math = translateIntervals(math, template, lang);
+    } else if (detectCoordinates(math)) {
+        math = translateCoordinates(math, template, lang);
+    } else {
+        math = translateCoordinatesOrOpenIntervals(math, template, lang);
+    }
+
+    // The rest of the rules can be applied only
+    // when we have the translated template.
     if (!template) {
         return math;
     }
@@ -371,9 +405,402 @@ function maybeTranslateMath(math, template, lang) {
     return math;
 }
 
+
+/**
+ * Base colors currently used in KA strings taken from KaTeX definitions, see:
+ * https://github.com/KaTeX/KaTeX/blob/master/src/macros.js
+ * There can be different variants of a single color, such as \redA or \blueD,
+ * but that's handled elsewhere.
+ */
+const KATEX_BASE_COLORS = ['blue', 'gold', 'gray', 'mint', 'green', 'red',
+         'maroon', 'orange', 'pink', 'purple', 'teal', 'kaBlue', 'kaGreen'];
+
+/**
+ * Construct regular expression to match decimal numbers for a given lang,
+ * possibly wrapped in TeX commands.
+ *
+ * We do not return the RegExp object, only the string
+ * so that it can be combined into more complicated expressions.
+ *
+ * By default, the regex contains two capturing groups:
+ * 1. integer part
+ * 2. decimal part
+ * This can be changed by passing capture=false,
+ * this variant is used to construct regexes for coordinates and intervals.
+ *
+ * @param {string} lang The KA locale
+ * @param {bool} capture whether to include capturing groups in regex
+ * @returns {string} String to be passed into RegExp constructor.
+ */
+function getDecNumberRegexString(lang, capture = true) {
+    // Definition of regex for decimal numbers
+    // We need to allow for strings like '\\greenD{3}.\\blue{1}' or
+    // repeating decimals like '1/3 = 0.\\overline{3}'
+    //
+    // These colors are appended by optional [A-Z]? to match all definitions
+    // from KaTeX. This will form a superset of actually defined colors,
+    // but that hardly matters here and is more future-proof if new colors
+    // were defined at some point
+    const katexColorMacros = KATEX_BASE_COLORS.join('|');
+
+    const integerPart = `[0-9]+|\\\\(?:${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
+    // Decimal part is different from integer part
+    // because it can contain \\overline
+    // TODO: Some langs do not use \\overline, but \\dot
+    const decPart =
+       `[0-9]+|\\\\(?:overline|${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
+
+    const sep = getEscapedDecimalSeparator(lang);
+
+    // This part matches strings like `\\green{1.2}`
+    const wrappedDecimal =
+        `\\\\(?:${katexColorMacros})[A-Z]?\\{-?[0-9]+${sep}[0-9]+\\}`;
+
+    // Wrapped decimal is not needed if we capture integer and decimal part
+    // because in that case we do not care that the decimal number
+    // is wrapped as a whole
+    return capture ?
+        `(${integerPart})${sep}(${decPart})` :
+        `(?:(?:${integerPart})${sep}(?:${decPart}))|(?:${wrappedDecimal})`;
+}
+
+/**
+ * Return decimal separator for a given language.
+ * The separator is used in regex so it needs to be escaped.
+ *
+ * @param {string} lang KA locale
+ * @returns {string} Decimal separator to be passed into RegExp constructor.
+ */
+function getEscapedDecimalSeparator(lang) {
+    if (MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang)) {
+        return '\\{,\\}';
+    } else if (MATH_RULES_LOCALES.ARABIC_COMMA.includes(lang)) {
+        return '\\{،\\}';
+    } else {
+        return '\\.';
+    }
+}
+
+/**
+ * Build regex string for ranges (inside intervals)
+ * or, equivalently, cartesian coordinates (without parentheses).
+ *
+ * Matches strings such as:
+ * '-1,0'
+ * '1.2;3'
+ * '\greenD4, \blue{1{,}2}'
+ * 'x,y'
+ *
+ * We pass in the language param, because we need to match
+ * different notations for decimal numbers
+ *
+ * @param {string} lang KA locale
+ * @returns {string} string to be passed to RegExp constructor
+ */
+function getOrderedPairRegexString(lang) {
+    const katexColorMacros = `\\\\(?:${KATEX_BASE_COLORS.join('|')})[A-Z]?`;
+    // Assuming single-letter variables and numbers below 1000
+    // (without thousand separator)
+    const integer =
+      `-?[0-9]+|-?${katexColorMacros}\\{-?[0-9]+\\}|-?${katexColorMacros}[0-9]`;
+    const variable = `[a-z]|${katexColorMacros}\\{[a-z]\\}`;
+    const decimal = getDecNumberRegexString(lang,
+                /* don't include capture groups */ false);
+    const numberOrLetter = `${variable}|${decimal}|${integer}`;
+    // NOTE(danielhollas): We allow comma and semicolon for all langs
+    // as separators, even though maybe some langs use only comma.
+    // Since the US strings always have commas (I think),
+    // it's not a big deal if we are more permissive.
+    // If a translator bothered to change it to semicolon,
+    // they probably had a reason.
+    let separators = ',;';
+    if (lang === 'de') {
+        separators += '|'; // For German coordinates
+    }
+    // Support LaTeX spaces, e.g. '4~; 3' (used in e.g. French notation)
+    const space = `(?:\\\\,|~|\\s)*`;
+    const sep = `${space}[${separators}]${space}`;
+    return `\\s*(${numberOrLetter})(${sep})(${numberOrLetter})\\s*`;
+}
+
+
+/**
+ * Detect closed or half-closed intervals in US math expression, such as
+ * '[a,b]', '[1,2)' or '(0,5]'
+ *
+ * (the expression can contain numbers or single-letter variables,
+ * see getOrderedpairRegexString)
+ *
+ * We cannot detect open intervals, because they have the same
+ * notation as cartesian coordinates in the US.
+ *
+ * @param {string} math English math string
+ * @returns {bool} true if math contains at least one interval
+ */
+function detectClosedInterval(math) {
+    const lang = 'en';
+    const interval = getOrderedPairRegexString(lang);
+    const closedInterval = `\\[${interval}\\]`;
+    const leftClosedInterval = `\\[${interval}\\)`;
+    const rightClosedInterval = `\\(${interval}\\]`;
+    return math.match(closedInterval) ||
+        math.match(leftClosedInterval) ||
+        math.match(rightClosedInterval);
+}
+
+/**
+ * A heuristic for detecting cartesian coordinates in US math expressions.
+ *
+ * Given `(a,b)`, an interval would always have a < b
+ * (4, 2) is a coordinate
+ * (2, 4) may be coordinate or open interval so we return false
+ * (x, y) can also be coordinate or open interval so we return false
+ *
+ * @param {string} math English math string
+ * @returns {bool} true if math definitely contains cartesian coordinates
+ */
+function detectCoordinates(math) {
+    const lang = 'en';
+    const coords = getOrderedPairRegexString(lang);
+    const coordsRegex = new RegExp(`\\(${coords}\\)`, 'g');
+    let match;
+    while ( (match = coordsRegex.exec(math)) !== null &&
+        match.length === 4) {
+        // Remove color commands around numbers
+        const num1 = match[1].replace(/[a-zA-Z]|\{|\}|\\/g, '');
+        const num2 = match[3].replace(/[a-zA-Z]|\{|\}|\\/g, '');
+        const a = parseFloat(num1);
+        const b = parseFloat(num2);
+        if (a >= b) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Extract the separator from a translated template.
+ * If empty, the default separator is used.
+ *
+ * Regular expression is passed in that matches coordinates/intervals
+ * in a given language. The separator is captured in the second group.
+ *
+ * @param {string} template User-translated template (optional)
+ * @param {string} regex Regular expression matching coordinates/intervals
+ * @param {string} lang KA locale of the translation language.
+ * @returns {string} Translated string
+ */
+function getSeparator(template, regex, lang) {
+    let sepDefault = ',';
+    // Languages with decimal comma typically use semicolon
+    if (MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang)) {
+        sepDefault = ';';
+    }
+    let match;
+    // Return separator from the template if detected
+    if (template &&
+        (match = template.match(regex)) !== null &&
+        match.length === 4) {
+        return match[2];
+    } else {
+        return sepDefault;
+    }
+}
+
+/**
+ * Translates notation for cartesian coordinates, such as:
+ * (3,0) or (x,y)
+ *
+ * A translated template is used to determine the separator.
+ * If empty, the default separator is used.
+ *
+ * @param {string} math A math expression to be translated
+ * @param {string} template User-translated template (optional)
+ * @param {string} lang The KA locale of the translation language.
+ * @returns {string} Translated string
+ */
+function translateCoordinates(math, template, lang) {
+    const coordsUS = getOrderedPairRegexString('en');
+    const coordsRegexUS = new RegExp(`\\(${coordsUS}\\)`, 'g');
+
+    const coords = getOrderedPairRegexString(lang);
+    let coordsRegex;
+    if (MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang)) {
+        coordsRegex = new RegExp(`\\[${coords}\\]`);
+    } else {
+        coordsRegex = new RegExp(`\\(${coords}\\)`);
+    }
+
+    const sep = getSeparator(template, coordsRegex, lang);
+
+    const coordsTranslations = [
+        {langs: MATH_RULES_LOCALES.COORDS_AS_BRACKETS,
+            regex: coordsRegexUS, replace: `[$1${sep}$3]`},
+    ];
+
+    coordsTranslations.forEach(function(el) {
+        if (el.langs.includes(lang)) {
+            math = math.replace(el.regex, el.replace);
+        } else {
+            // For all other langs translate only the separator
+            math = math.replace(el.regex, `($1${sep}$3)`);
+        }
+    });
+
+    return math;
+}
+
+/**
+ * Translate notation for intervals (opened, closed, half-closed)
+ * e.g. '(-1,1)', '(0, a]' or '[\blue3,\red4]'
+ *
+ * @param {string} math A math expression to be translated
+ * @param {string} template User-translated template
+ * @param {string} lang The KA locale of the translation language.
+ * @returns {string} Translated string
+ */
+function translateIntervals(math, template, lang) {
+    const intervalUS = getOrderedPairRegexString('en');
+    const closedInterval = new RegExp(`\\[${intervalUS}\\]`, 'g');
+    const openInterval = new RegExp(`\\(${intervalUS}\\)`, 'g');
+    const leftClosedInterval = new RegExp(`\\[${intervalUS}\\)`, 'g');
+    const rightClosedInterval = new RegExp(`\\(${intervalUS}\\]`, 'g');
+
+    // Detect range separator in the template, can be comma or semicolon
+    // We expect that if template contains more intervals, they will have
+    // the same separator. The can also include any whitespace chars.
+    // Again, these need to be consistent in all intervals!
+    const interval = getOrderedPairRegexString(lang);
+    const generalInterval = new RegExp(`[[(\\]]${interval}[[)\\]]`);
+
+    const sep = getSeparator(template, generalInterval, lang);
+
+    const intervalTranslations = [
+        // open intervals with inverted brackets
+        {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
+            regex: openInterval, replace: `]$1${sep}$3[`},
+        {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
+            regex: closedInterval, replace: `[$1${sep}$3]`},
+        {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
+            regex: leftClosedInterval, replace: `[$1${sep}$3[`},
+        {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
+            regex: rightClosedInterval, replace: `]$1${sep}$3]`},
+        // closed intervals with angle brackets
+        // We cannot use \langle|\rangle because of the linter
+        // so we insert equivalent unicode chars directly.
+        // U+27E8 | ⟨ | \xe2\x9f\xa8 | MATHEMATICAL LEFT ANGLE BRACKET
+        // U+27E9 | ⟩ | \xe2\x9f\xa9 | MATHEMATICAL RIGHT ANGLE BRACKET
+        {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
+            regex: openInterval, replace: `($1${sep}$3)`},
+        {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
+            regex: closedInterval, replace: `⟨$1${sep}$3⟩`},
+        {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
+            regex: leftClosedInterval, replace: `⟨$1${sep}$3)`},
+        {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
+            regex: rightClosedInterval, replace: `($1${sep}$3⟩`},
+    ];
+
+    intervalTranslations.forEach(function(el) {
+        if (el.langs.includes(lang)) {
+            math = math.replace(el.regex, el.replace);
+        }
+    });
+
+    // For all other languages not listed above,
+    // translate only the separator
+    if (MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(lang) ||
+        MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS.includes(lang) ) {
+        return math;
+    }
+
+    // The only thing we translate here is the separator!
+    const separatorTranslations = [
+        {regex: openInterval, replace: `($1${sep}$3)`},
+        {regex: closedInterval, replace: `[$1${sep}$3]`},
+        {regex: leftClosedInterval, replace: `[$1${sep}$3)`},
+        {regex: rightClosedInterval, replace: `($1${sep}$3]`},
+    ];
+
+    separatorTranslations.forEach(function(el) {
+        math = math.replace(el.regex, el.replace);
+    });
+
+    return math;
+}
+
+/**
+ * Translate notation of coordinates or open intervals.
+ *
+ * Since the US notation is the same, we cannot really distinguish
+ * the two apart. So we will detect the notation from the user-translated
+ * template and use it. Without the template, we return the same string.
+ *
+ * Example US strings:
+ * '(0,1)', '(a,b)', '(1.4, \red{5.6})'
+ *
+ * @param {string} math A math expression to be translated
+ * @param {string} template User-translated template
+ * @param {string} lang Khan language
+ * @returns {string} translated string
+ */
+function translateCoordinatesOrOpenIntervals(math, template, lang) {
+    if (!template) {
+        return math;
+    }
+    const orderedPairUS = getOrderedPairRegexString('en');
+    const coordsOrOpenIntervalUS = new RegExp(`\\(${orderedPairUS}\\)`, 'g');
+
+    // First look into the English string
+    let match = math.match(coordsOrOpenIntervalUS);
+    if (!match) {
+        return math;
+    }
+    // Now we know that the English string contains coordinates or intervals
+    // Let's detect them in the template, if we fail,
+    // we return prematurely
+    const orderedPair = getOrderedPairRegexString(lang);
+    const coordsOrOpenInterval = new RegExp(`([[(\\]])${orderedPair}([[)\\]])`);
+    match = template.match(coordsOrOpenInterval);
+    if (!match || match.length !== 6) {
+        return math;
+    }
+
+    const left = match[1];
+    const sep = match[3];
+    const right = match[5];
+
+    // Verify that left and right parentheses|brackets make sense
+    // for a given language
+    switch(left) {
+    case '[':
+        if (right !== ']' ||
+            !MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang))
+            return math;
+        break;
+    case ']':
+        if (right !== '[' ||
+            !MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(lang))
+            return math;
+        break;
+    case '(':
+        if (right !== ')')
+            return math;
+        break;
+    default:
+        return math;
+    }
+
+    const replace = `${left}$1${sep}$3${right}`;
+
+    return math.replace(coordsOrOpenIntervalUS, replace);
+}
+
 module.exports = {
     translateMath: translateMath,
+    // The following are exported only for testing
     maybeTranslateMath: maybeTranslateMath,
     normalizeTranslatedMath: normalizeTranslatedMath,
     MATH_RULES_LOCALES: MATH_RULES_LOCALES,
+    detectClosedInterval: detectClosedInterval,
+    detectCoordinates: detectCoordinates,
 };
