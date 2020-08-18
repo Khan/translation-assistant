@@ -10,20 +10,22 @@
  */
 const MATH_RULES_LOCALES = {
     // Number formats
-    THOUSAND_SEP_AS_THIN_SPACE: ['cs', 'fr', 'de', 'lol',
-        'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'],
-    THOUSAND_SEP_AS_DOT: ['pt', 'tr', 'da', 'sr', 'el', 'id'],
-    NO_THOUSAND_SEP: ['ko', 'ps', 'ka', 'hy'],
-    DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'lol',
-        'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el', 'id', 'ka',
-        'ru', 'ta', 'hy'],
+    THOUSAND_SEP_AS_THIN_SPACE: ['az', 'bg', 'cs', 'de', 'fr', 'hu', 'it',
+        'lv', 'nb', 'nl', 'pl', 'pt-pt', 'ro', 'sv', 'uk'],
+    THOUSAND_SEP_AS_DOT: ['da', 'el', 'id', 'pt', 'sr', 'tr' ],
+    NO_THOUSAND_SEP: ['hy', 'ka', 'ko', 'ps' ],
+    DECIMAL_COMMA: ['az', 'bg', 'cs', 'da', 'de', 'el', 'fr', 'hu', 'hy', 'id',
+        'it', 'ka', 'lv', 'nb', 'nl', 'pl', 'pt', 'pt-pt', 'ro', 'ru', 'sr',
+        'sv', 'tr'],
     ARABIC_COMMA: ['ps'],
     PERSO_ARABIC_NUMERALS: ['ps'],
-    // Notations for repeating decimals - 0.\overline{3}
-    // 0.\dot{3}
-    OVERLINE_AS_DOT: ['bn'],
-    // 0.(3)
-    OVERLINE_AS_PARENS: ['az', 'pt-pt', 'hy', 'pl'],
+    // Notations for repeating decimals
+    // 1 / 3 = 0.\overline{3} -> 0.\dot{3}
+    // 1 / 7 = 0.\overline{142857} -> 0.\dot{1}4285\dot{7}
+    OVERLINE_AS_DOT: ['bn', 'hu', 'ja'],
+    // 1 / 3 = 0.\overline{3} -> 0.(3)
+    // 1 / 7 = 0.\overline{142857} -> 0.(142857)
+    OVERLINE_AS_PARENS: ['az', 'bg', 'hy', 'lv', 'pl', 'pt-pt', 'ro'],
 
     // Intervals and cartesian coordinates
     // (a,b) - US open interval or coordinates
@@ -37,25 +39,26 @@ const MATH_RULES_LOCALES = {
     COORDS_AS_BRACKETS: ['cs'],
     // Binary operators
     // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
-    // when \mathbin{.} becomes available for them
-    TIMES_AS_CDOT: ['cs', 'pl', 'de', 'nb', 'sr', 'ro', 'hu', 'hy', 'sv',
-        'da', 'bg'],
-    CDOT_AS_TIMES: ['fr', 'ps', 'pt-pt', 'ta'],
-    DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'it',
-        'pt-pt', 'ru', 'nb'],
+    // when \mathbin{.} becomes available for them (currently blocked by linter)
+    TIMES_AS_CDOT: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'lv', 'nb', 'pl',
+        'ro', 'sr', 'sv' ],
+    CDOT_AS_TIMES: [ 'fr', 'ps', 'pt-pt'],
+    DIV_AS_COLON: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'it', 'lv', 'nb',
+        'pl', 'pt-pt', 'ro', 'ru', 'uk'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
-    TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'pt', 'pt-pt'],
+    TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'lv', 'pt', 'pt-pt', 'ro'],
     COT_AS_COTG: ['cs', 'pt', 'pt-pt'],
-    COT_AS_CTG: ['az', 'hu', 'hy', 'bg'],
-    CSC_AS_COSEC: ['az', 'bg', 'bn', 'cs'],
+    COT_AS_CTG: ['az', 'bg', 'hu', 'hy', 'lv', 'ro'],
+    CSC_AS_COSEC: ['az', 'bg', 'bn', 'cs', 'gu', 'hi', 'kn', 'lv', 'my', 'pa',
+        'ro'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
     // Rules conditional on the translated template
     MAYBE_DIV_AS_COLON: ['id', 'lol'],
-    MAYBE_TIMES_AS_CDOT: ['az', 'bn', 'el', 'hi', 'id', 'it', 'ja', 'ka',
-        'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
-    MAYBE_CDOT_AS_TIMES: ['az', 'bn', 'el', 'hi', 'id', 'it', 'ja', 'ka',
-        'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
+    MAYBE_TIMES_AS_CDOT: ['bn', 'el', 'gu', 'hi', 'id', 'it', 'ja', 'ka', 'kn',
+        'ko', 'my', 'nl', 'pa', 'pt', 'ru', 'ta', 'te', 'uk', 'zh-hans'],
+    MAYBE_CDOT_AS_TIMES: ['bn', 'el', 'gu', 'hi', 'id', 'it', 'ja', 'ka', 'kn',
+        'ko', 'my', 'nl', 'pa', 'pt', 'ru', 'ta', 'te', 'uk', 'zh-hans'],
 };
 
 
@@ -160,11 +163,16 @@ function translateNumbers(math, lang) {
         {langs: MATH_RULES_LOCALES.ARABIC_COMMA,
             regex: decimalNumberRegex, replace: '$1{،}$2'},
 
-        // Different notations for repeating decimals
+        // Notations for repeating decimals
         {langs: MATH_RULES_LOCALES.OVERLINE_AS_PARENS,
             regex: /\\overline\{(\d+)\}/g, replace: '($1)'},
 
-        // MATH_RULES_LOCALES.OVERLINE_AS_DOT needs special handling
+        {langs: MATH_RULES_LOCALES.OVERLINE_AS_DOT,
+            regex: /\\overline\{(\d)\}/g, replace: '\\dot{$1}'},
+
+        {langs: MATH_RULES_LOCALES.OVERLINE_AS_DOT,
+            regex: /\\overline\{(\d)(\d*)(\d)\}/g,
+            replace: '\\dot{$1}$2\\dot{$3}'},
 
         // Thousand separator notations
 
@@ -186,18 +194,6 @@ function translateNumbers(math, lang) {
             math = math.replace(element.regex, element.replace);
         }
     });
-
-    // Special handling for OVERLINE_AS_DOT rule for repeating decimals
-    // we need to translate 0.\overline{12} as 0.\dot{1}\dot{2}
-    if (MATH_RULES_LOCALES.OVERLINE_AS_DOT.includes(lang)) {
-        const fromRegex = new RegExp(/\\overline\{(\d+)\}/, 'g');
-        let match;
-        while ((match = fromRegex.exec(math)) !== null) {
-            const numbers = match[1];
-            const replace = numbers.replace(/\d/g, '\\dot{$&}');
-            math = math.replace(match[0], replace);
-        }
-    }
 
     return math;
 }

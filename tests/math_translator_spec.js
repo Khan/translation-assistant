@@ -195,11 +195,14 @@ describe('MathTranslator (translateMath)', function() {
             const locale = 'bn';
             assert(MATH_RULES_LOCALES.OVERLINE_AS_DOT.includes(locale));
 
-            const englishStr = '1.\\overline{3} + 9.\\overline{44}';
-            const translatedStr = '1.\\dot{3} + 9.\\dot{4}\\dot{4}';
+            const englishStr =
+                '1.\\overline{3} + 9.\\overline{12} - 0.\\overline{123}';
+            const translatedStr =
+                '1.\\dot{3} + 9.\\dot{1}\\dot{2} - 0.\\dot{1}2\\dot{3}';
             const outputStr = translateMath(englishStr, '', locale);
             assert.equal(outputStr, translatedStr);
-        });
+        }
+    );
 
     it('should translate \\overline in repeating decimals as parentheses',
         function() {
@@ -714,6 +717,15 @@ describe('detectCoordinates', function() {
 });
 
 describe('MATH_RULES_LOCALES', function() {
+
+    it('should be sorted alphabetically', function() {
+        for (const locales of Object.values(MATH_RULES_LOCALES)) {
+            for (let i = 0; i < locales.length - 1; i++) {
+                // This also ensures that we don't have duplicates
+                assert(locales[i] < locales[i + 1]);
+            }
+        }
+    });
 
     it('should not have conflicting rules for multiplication', function() {
         MATH_RULES_LOCALES.CDOT_AS_TIMES.forEach(function(locale) {

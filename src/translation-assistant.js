@@ -46,7 +46,7 @@ const LINE_BREAK = '\n\n';
  * The `str` property is the `str` parameter with math, graphies, images, and
  * widgets replaced with placeholders.  Also, we remove unimportant whitespace
  * differences on the item so that we can group strings with similar natural
- * language text.  We also disregard bold markup when determining a match.
+ * language text. We also disregard bold markup when determining a match.
  * This means that translators may have to add bold markup to the suggestion
  * in some cases.
  *
@@ -113,7 +113,7 @@ function stringToGroupKey(str) {
  *
  * This mapping array indicates that the first two __MATH__ placeholders in the
  * translated string template should be replaced with the second formula
- * from the English string we're translating.  The third __MATH__ placeholder
+ * from the English string we're translating. The third __MATH__ placeholder
  * should be replaced by the first formula from the English string we're
  * translating.
  *
@@ -181,7 +181,7 @@ function getMapping(
 }
 
 /**
- * Helper for getting all subgroup matches from a string.  The callback is
+ * Helper for getting all subgroup matches from a string. The callback is
  * passed the matches array for each match in `text`.
  *
  * @param {String} text The string to find matches in.
@@ -322,8 +322,8 @@ function getMathDictionary(englishStr, translatedStr, lang) {
  * Creates a template object based on englishStr and translatedStr strings.
  *
  * All math, graphie, and widget sub-strings are replaced by placeholders and
- * the mappings for which sub-string goes where in the translatedStr.  The
- * englishStr is split into lines.  While this isn't particular useful right
+ * the mappings for which sub-string goes where in the translatedStr. The
+ * englishStr is split into lines. While this isn't particular useful right
  * now, the plan is to eventually use the lines creating suggestions for
  * partial matches.
  *
@@ -400,7 +400,7 @@ function escapeForRegex(str) {
 /**
  * Translate the text inside \\text{} and \\textbf blocks.
  *
- * @param {string} englishMath The math string to translate.  If a English
+ * @param {string} englishMath The math string to translate. If an English
  *      string from CrowdIn is "Solve $3\\text{nickles} = x\\textbf{pennies}$"
  *      then englishMath would be "3\\text{nickles} = x\\textbf{pennies}"
  * @param {Object} dict A mapping from english words to translated words that
@@ -631,12 +631,12 @@ class TranslationAssistant {
      * Group objects that contain English strings to translate.
      *
      * Groups are determined by the similarity between the English strings
-     * returned by `this.getEnglishStr` on each object in `items`.  In order to
+     * returned by `this.getEnglishStr` on each object in `items`. In order to
      * find more matches we ignore math, graphie, and widget substrings.
      *
      * Each group contains an array of items that belong in that group and a
      * translation template if there was at least one item that had a
-     * translation.  Translations are determined by passing each item to
+     * translation. Translations are determined by passing each item to
      * `this.getTranslation`.
      *
      * Input:
