@@ -24,7 +24,7 @@
   "devDependencies": {
     "babel": "^5.8.23",
     "babel-core": "^5.8.25",
-    "eslint": "^7.5.0",
+    "eslint": "^7.7.0",
     "expect.js": "^0.3.1",
     "mocha": "^2.3.3",
     "pre-commit": "^1.2.2"

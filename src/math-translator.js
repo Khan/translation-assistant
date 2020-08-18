@@ -11,12 +11,12 @@
 const MATH_RULES_LOCALES = {
     // Number formats
     THOUSAND_SEP_AS_THIN_SPACE: ['cs', 'fr', 'de', 'lol',
-         'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'],
+        'pt-pt', 'nb', 'bg', 'pl', 'ro', 'nl', 'az', 'sv', 'it', 'hu', 'uk'],
     THOUSAND_SEP_AS_DOT: ['pt', 'tr', 'da', 'sr', 'el', 'id'],
     NO_THOUSAND_SEP: ['ko', 'ps', 'ka', 'hy'],
     DECIMAL_COMMA: ['cs', 'fr', 'de', 'pl', 'bg', 'nb', 'tr', 'da', 'sr', 'lol',
-            'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el', 'id', 'ka',
-            'ru', 'ta', 'hy'],
+        'ro', 'nl', 'hu', 'az', 'it', 'pt', 'pt-pt', 'sv', 'el', 'id', 'ka',
+        'ru', 'ta', 'hy'],
     ARABIC_COMMA: ['ps'],
     PERSO_ARABIC_NUMERALS: ['ps'],
     // Notations for repeating decimals - 0.\overline{3}
@@ -42,7 +42,7 @@ const MATH_RULES_LOCALES = {
         'da', 'bg'],
     CDOT_AS_TIMES: ['fr', 'ps', 'pt-pt', 'ta'],
     DIV_AS_COLON: ['cs', 'de', 'bg', 'hu', 'uk', 'da', 'hy', 'pl', 'it',
-            'pt-pt', 'ru', 'nb'],
+        'pt-pt', 'ru', 'nb'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
     TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'pt', 'pt-pt'],
@@ -53,9 +53,9 @@ const MATH_RULES_LOCALES = {
     // Rules conditional on the translated template
     MAYBE_DIV_AS_COLON: ['id', 'lol'],
     MAYBE_TIMES_AS_CDOT: ['az', 'bn', 'el', 'hi', 'id', 'it', 'ja', 'ka',
-            'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
+        'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
     MAYBE_CDOT_AS_TIMES: ['az', 'bn', 'el', 'hi', 'id', 'it', 'ja', 'ka',
-            'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
+        'ko', 'nl', 'pt', 'ru', 'uk', 'zh-hans', 'lol'],
 };
 
 
@@ -101,15 +101,15 @@ function translateNumerals(math, lang) {
     // Perso-Arabic numerals (Used by Pashto)
     if (MATH_RULES_LOCALES.PERSO_ARABIC_NUMERALS.includes(lang)) {
         math = math.replace(/1/g, '۱')
-                   .replace(/2/g, '۲')
-                   .replace(/3/g, '۳')
-                   .replace(/4/g, '۴')
-                   .replace(/5/g, '۵')
-                   .replace(/6/g, '۶')
-                   .replace(/7/g, '۷')
-                   .replace(/8/g, '۸')
-                   .replace(/9/g, '۹')
-                   .replace(/0/g, '۰');
+            .replace(/2/g, '۲')
+            .replace(/3/g, '۳')
+            .replace(/4/g, '۴')
+            .replace(/5/g, '۵')
+            .replace(/6/g, '۶')
+            .replace(/7/g, '۷')
+            .replace(/8/g, '۸')
+            .replace(/9/g, '۹')
+            .replace(/0/g, '۰');
     }
     // TODO(danielhollas): Implement Eastern-Arabic numerals
     // (currently not in use by any team)
@@ -136,48 +136,48 @@ function translateNumbers(math, lang) {
     const thousandSeparatorRegex =
         new RegExp(`([0-9])${placeholder}([0-9])(?=[0-9]{2})`, 'g');
     const thousandSeparatorLocales = [].concat(
-            MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
-            MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
-            MATH_RULES_LOCALES.NO_THOUSAND_SEP);
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
+        MATH_RULES_LOCALES.NO_THOUSAND_SEP);
 
     const decimalNumberRegex = new RegExp(getDecNumberRegexString('en'), 'g');
 
     const mathTranslations = [
-         // IMPORTANT NOTE: This MUST be the first regex
-         // Convert thousand separators to a placeholder
-         // to prevent interactions with decimal commas
-         {langs: thousandSeparatorLocales,
+        // IMPORTANT NOTE: This MUST be the first regex
+        // Convert thousand separators to a placeholder
+        // to prevent interactions with decimal commas
+        {langs: thousandSeparatorLocales,
             regex: /([0-9])\{,\}([0-9])(?=[0-9]{2})/g,
             replace: `$1${placeholder}$2`},
 
-         // Decimal comma
-         {langs: MATH_RULES_LOCALES.DECIMAL_COMMA,
+        // Decimal comma
+        {langs: MATH_RULES_LOCALES.DECIMAL_COMMA,
             regex: decimalNumberRegex, replace: '$1{,}$2'},
 
-         // Arabic decimal comma, see https://en.wikipedia.org/wiki/Comma
-         // NOTE: At least in MathJax, this comma does not need braces,
-         // but it feels safer to have them here.
-         {langs: MATH_RULES_LOCALES.ARABIC_COMMA,
+        // Arabic decimal comma, see https://en.wikipedia.org/wiki/Comma
+        // NOTE: At least in MathJax, this comma does not need braces,
+        // but it feels safer to have them here.
+        {langs: MATH_RULES_LOCALES.ARABIC_COMMA,
             regex: decimalNumberRegex, replace: '$1{،}$2'},
 
-         // Different notations for repeating decimals
-         {langs: MATH_RULES_LOCALES.OVERLINE_AS_PARENS,
+        // Different notations for repeating decimals
+        {langs: MATH_RULES_LOCALES.OVERLINE_AS_PARENS,
             regex: /\\overline\{(\d+)\}/g, replace: '($1)'},
 
-         // MATH_RULES_LOCALES.OVERLINE_AS_DOT needs special handling
+        // MATH_RULES_LOCALES.OVERLINE_AS_DOT needs special handling
 
-         // Thousand separator notations
+        // Thousand separator notations
 
-         // No thousand separator
-         {langs: MATH_RULES_LOCALES.NO_THOUSAND_SEP,
+        // No thousand separator
+        {langs: MATH_RULES_LOCALES.NO_THOUSAND_SEP,
             regex: thousandSeparatorRegex, replace: '$1$2'},
 
-         // Thousand separator as a dot
-         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
+        // Thousand separator as a dot
+        {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
             regex: thousandSeparatorRegex, replace: '$1.$2'},
 
-         // Thousand separator as a thin space (\, in Tex)
-         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
+        // Thousand separator as a thin space (\, in Tex)
+        {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
             regex: thousandSeparatorRegex, replace: '$1\\,$2'},
     ];
 
@@ -213,45 +213,45 @@ function translateNumbers(math, lang) {
 function translateMathOperators(math, lang) {
 
     const mathTranslations = [
-         // BINARY OPERATORS
-         // division sign as a colon
-         {langs: MATH_RULES_LOCALES.DIV_AS_COLON,
+        // BINARY OPERATORS
+        // division sign as a colon
+        {langs: MATH_RULES_LOCALES.DIV_AS_COLON,
             regex: /\\div/g, replace: '\\mathbin{:}'},
 
-         // multiplication sign as a centered dot
-         {langs: MATH_RULES_LOCALES.TIMES_AS_CDOT,
+        // multiplication sign as a centered dot
+        {langs: MATH_RULES_LOCALES.TIMES_AS_CDOT,
             regex: /\\times/g, replace: '\\cdot'},
 
-         // multiplication sign as x
-         {langs: MATH_RULES_LOCALES.CDOT_AS_TIMES,
+        // multiplication sign as x
+        {langs: MATH_RULES_LOCALES.CDOT_AS_TIMES,
             regex: /\\cdot/g, replace: '\\times'},
 
-         // multiplication sign as a simple dot, a Bulgarian specialty
-         // TODO(danielhollas): not yet allowed by the linter
-         // TODO(danielhollas): add a test for this case
-         //{langs: ['bg'],
-         //   regex: /\\times/g, replace: '\\mathbin{.}'},
+        // multiplication sign as a simple dot, a Bulgarian specialty
+        // TODO(danielhollas): not yet allowed by the linter
+        // TODO(danielhollas): add a test for this case
+        //{langs: ['bg'],
+        //   regex: /\\times/g, replace: '\\mathbin{.}'},
 
-         // TRIG FUNCTIONS
-         // NOTE(danielhollas): In principle, some might want to use
-         // e.g. sin^{-1} instead of arcsin, but we'll keep it simple
-         // and that notation is confusing anyway (1/sin or arcsin?)
-         {langs: MATH_RULES_LOCALES.SIN_AS_SEN,
+        // TRIG FUNCTIONS
+        // NOTE(danielhollas): In principle, some might want to use
+        // e.g. sin^{-1} instead of arcsin, but we'll keep it simple
+        // and that notation is confusing anyway (1/sin or arcsin?)
+        {langs: MATH_RULES_LOCALES.SIN_AS_SEN,
             regex: /\\(arc)?sin/g, replace: '\\operatorname{$1sen}'},
 
-         {langs: MATH_RULES_LOCALES.TAN_AS_TG,
+        {langs: MATH_RULES_LOCALES.TAN_AS_TG,
             regex: /\\(arc)?tan/g, replace: '\\operatorname{$1tg}'},
 
-         {langs: MATH_RULES_LOCALES.COT_AS_COTG,
+        {langs: MATH_RULES_LOCALES.COT_AS_COTG,
             regex: /\\(arc)?cot/g, replace: '\\operatorname{$1cotg}'},
 
-         {langs: MATH_RULES_LOCALES.COT_AS_CTG,
+        {langs: MATH_RULES_LOCALES.COT_AS_CTG,
             regex: /\\(arc)?cot/g, replace: '\\operatorname{$1ctg}'},
 
-         {langs: MATH_RULES_LOCALES.CSC_AS_COSEC,
+        {langs: MATH_RULES_LOCALES.CSC_AS_COSEC,
             regex: /\\(arc)?csc/g, replace: '\\operatorname{$1cosec}'},
 
-         {langs: MATH_RULES_LOCALES.CSC_AS_COSSEC,
+        {langs: MATH_RULES_LOCALES.CSC_AS_COSSEC,
             regex: /\\(arc)?csc/g, replace: '\\operatorname{$1cossec}'},
     ];
 
@@ -280,39 +280,39 @@ function normalizeTranslatedMath(math, lang) {
     if (lang === 'en') return math;
 
     const mathNormalizations = [
-         // Strip superfluous curly braces around \\,
-         // which is used as thousand separator in some locales
-         // i.e. 10{,}200 can be translated as 10{\\,}200, but the curly
-         // braces are not really needed.
-         // To understand why braces are needed around comma, see:
-         // https://tex.stackexchange.com/questions/303110/avoid-space-after-thousands-separator-in-math-mode#303127
-         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
+        // Strip superfluous curly braces around \\,
+        // which is used as thousand separator in some locales
+        // i.e. 10{,}200 can be translated as 10{\\,}200, but the curly
+        // braces are not really needed.
+        // To understand why braces are needed around comma, see:
+        // https://tex.stackexchange.com/questions/303110/avoid-space-after-thousands-separator-in-math-mode#303127
+        {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
             regex: /([0-9])\{\\,\}([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
 
-         // Strip extra braces around a dot as a thousand separator
-         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
+        // Strip extra braces around a dot as a thousand separator
+        {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT,
             regex: /([0-9])\{\.\}([0-9])(?=[0-9]{2})/g, replace: '$1.$2'},
 
-         // Allow translators to use a full space (~ in LaTeX)
-         // (but TA will always suggest thin space \,)
-         // We cannot allow a literal space here, cause Tex would ignore it
-         {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
+        // Allow translators to use a full space (~ in LaTeX)
+        // (but TA will always suggest thin space \,)
+        // We cannot allow a literal space here, cause Tex would ignore it
+        {langs: MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE,
             regex: /([0-9])\{?~\}?([0-9])(?=[0-9]{2})/g, replace: '$1\\,$2'},
 
-         // KaTeX supports more trig functions then default LaTeX
-         // (\tg, \arctg, \cotg \ctg, \cosec)
-         // but we're using \operatorname for them as well in translateMath()
-         // In principle, they cannot be used by translators at the moment
-         // because they are blocked by linter. But we will permit them here
-         // in case the linter limitation is lifted in the future.
-         // https://katex.org/?data=%7B%22displayMode%22%3Atrue%2C%22leqno%22%3Afalse%2C%22fleqn%22%3Afalse%2C%22throwOnError%22%3Atrue%2C%22errorColor%22%3A%22%23cc0000%22%2C%22strict%22%3A%22warn%22%2C%22trust%22%3Afalse%2C%22macros%22%3A%7B%22%5C%5Cf%22%3A%22f(%231)%22%7D%2C%22code%22%3A%22%25%20%5C%5Cf%20is%20defined%20as%20f(%231)%20using%20the%20macro%5Cn%5C%5Csin%20%5C%5Carcsin%20%5C%5Ccos%20%5C%5Carccos%20%5C%5C%5C%5C%20%5C%5Ctan%20%5C%5Carctan%20%5C%5Ctg%20%5C%5Carctg%20%5C%5C%5C%5C%5Cn%5C%5Ccot%20%5C%5Ccotg%20%5C%5Cctg%20%5C%5Coperatorname%7Barccot%7D%20%5C%5C%5C%5C%5Cn%5C%5Ccsc%20%5C%5Ccosec%20%5C%5Coperatorname%7Barccsc%7D%20%5C%5C%5C%5C%5Cn%5C%5Coperatorname%7Bsen%7D%7Bx%7D%20%5C%5Csin%7Bx%7D%20%5C%5Csin%20x%22%7D
-         {langs: Array.from(new Set([].concat(
-                 MATH_RULES_LOCALES.TAN_AS_TG,
-                 MATH_RULES_LOCALES.COT_AS_COTG,
-                 MATH_RULES_LOCALES.COT_AS_CTG,
-                 MATH_RULES_LOCALES.CSC_AS_COSEC))),
-            regex: /\\(tg|arctg|cotg|ctg|cosec)/g,
-            replace: '\\operatorname{$1}'},
+        // KaTeX supports more trig functions then default LaTeX
+        // (\tg, \arctg, \cotg \ctg, \cosec)
+        // but we're using \operatorname for them as well in translateMath()
+        // In principle, they cannot be used by translators at the moment
+        // because they are blocked by linter. But we will permit them here
+        // in case the linter limitation is lifted in the future.
+        // https://katex.org/?data=%7B%22displayMode%22%3Atrue%2C%22leqno%22%3Afalse%2C%22fleqn%22%3Afalse%2C%22throwOnError%22%3Atrue%2C%22errorColor%22%3A%22%23cc0000%22%2C%22strict%22%3A%22warn%22%2C%22trust%22%3Afalse%2C%22macros%22%3A%7B%22%5C%5Cf%22%3A%22f(%231)%22%7D%2C%22code%22%3A%22%25%20%5C%5Cf%20is%20defined%20as%20f(%231)%20using%20the%20macro%5Cn%5C%5Csin%20%5C%5Carcsin%20%5C%5Ccos%20%5C%5Carccos%20%5C%5C%5C%5C%20%5C%5Ctan%20%5C%5Carctan%20%5C%5Ctg%20%5C%5Carctg%20%5C%5C%5C%5C%5Cn%5C%5Ccot%20%5C%5Ccotg%20%5C%5Cctg%20%5C%5Coperatorname%7Barccot%7D%20%5C%5C%5C%5C%5Cn%5C%5Ccsc%20%5C%5Ccosec%20%5C%5Coperatorname%7Barccsc%7D%20%5C%5C%5C%5C%5Cn%5C%5Coperatorname%7Bsen%7D%7Bx%7D%20%5C%5Csin%7Bx%7D%20%5C%5Csin%20x%22%7D
+        {langs: Array.from(new Set([].concat(
+            MATH_RULES_LOCALES.TAN_AS_TG,
+            MATH_RULES_LOCALES.COT_AS_COTG,
+            MATH_RULES_LOCALES.COT_AS_CTG,
+            MATH_RULES_LOCALES.CSC_AS_COSEC))),
+        regex: /\\(tg|arctg|cotg|ctg|cosec)/g,
+        replace: '\\operatorname{$1}'},
     ];
 
     mathNormalizations.forEach(function(element) {
@@ -384,10 +384,10 @@ function maybeTranslateMath(math, template, lang) {
         // multiplication sign as a centered dot
         {langs: MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT,
             regex: /\\times/g, replace: '\\cdot'},
-         // multiplication sign as x
+        // multiplication sign as x
         {langs: MATH_RULES_LOCALES.MAYBE_CDOT_AS_TIMES,
             regex: /\\cdot/g, replace: '\\times'},
-         // division sign as a colon
+        // division sign as a colon
         {langs: MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON,
             regex: /\\div/g, replace: '\\mathbin{:}'},
     ];
@@ -413,7 +413,7 @@ function maybeTranslateMath(math, template, lang) {
  * but that's handled elsewhere.
  */
 const KATEX_BASE_COLORS = ['blue', 'gold', 'gray', 'mint', 'green', 'red',
-         'maroon', 'orange', 'pink', 'purple', 'teal', 'kaBlue', 'kaGreen'];
+    'maroon', 'orange', 'pink', 'purple', 'teal', 'kaBlue', 'kaGreen'];
 
 /**
  * Construct regular expression to match decimal numbers for a given lang,
@@ -505,7 +505,7 @@ function getOrderedPairRegexString(lang) {
       `-?[0-9]+|-?${katexColorMacros}\\{-?[0-9]+\\}|-?${katexColorMacros}[0-9]`;
     const variable = `[a-z]|${katexColorMacros}\\{[a-z]\\}`;
     const decimal = getDecNumberRegexString(lang,
-                /* don't include capture groups */ false);
+        /* don't include capture groups */ false);
     const numberOrLetter = `${variable}|${decimal}|${integer}`;
     // NOTE(danielhollas): We allow comma and semicolon for all langs
     // as separators, even though maybe some langs use only comma.
@@ -518,7 +518,7 @@ function getOrderedPairRegexString(lang) {
         separators += '|'; // For German coordinates
     }
     // Support LaTeX spaces, e.g. '4~; 3' (used in e.g. French notation)
-    const space = `(?:\\\\,|~|\\s)*`;
+    const space = '(?:\\\\,|~|\\s)*';
     const sep = `${space}[${separators}]${space}`;
     return `\\s*(${numberOrLetter})(${sep})(${numberOrLetter})\\s*`;
 }
@@ -771,7 +771,7 @@ function translateCoordinatesOrOpenIntervals(math, template, lang) {
 
     // Verify that left and right parentheses|brackets make sense
     // for a given language
-    switch(left) {
+    switch (left) {
     case '[':
         if (right !== ']' ||
             !MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang))
