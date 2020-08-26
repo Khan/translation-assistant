@@ -17,12 +17,13 @@ const {MATH_RULES_LOCALES} = require('../lib/math-translator');
 function makeGraphie() {
     const baseURL = 'web+graphie://ka-perseus-graphie.s3.amazonaws.com';
     const id = Date.now() + (100000 * Math.random() | 0);
-    console.log(id);
     return `![](${baseURL}/${id})`;
 }
 
+const NUM_LINKS = 6;
+
 const graphies = [];
-for (let i = 0; i < 6; i++) {
+for (let i = 0; i < NUM_LINKS; i++) {
     graphies.push(makeGraphie());
 }
 
@@ -37,7 +38,7 @@ function makeImageLink() {
 }
 
 const images = [];
-for (let i = 0; i < 6; i++) {
+for (let i = 0; i < NUM_LINKS; i++) {
     images.push(makeImageLink());
 }
 
@@ -52,7 +53,7 @@ function makeGraphieLink() {
 }
 
 const graphieLinks = [];
-for (let i = 0; i < 6; i++) {
+for (let i = 0; i < NUM_LINKS; i++) {
     graphieLinks.push(makeGraphieLink());
 }
 
@@ -1192,24 +1193,24 @@ describe('TranslationAssistant (image and graphie links)', function() {
     // NOTE(danielhollas): Testing whether some test flakiness
     // is caused by non-unique graphie or image links
     it('tests should have unique Graphies', function() {
-        for (let i = 0; i < 6; i++) {
-            for (let j = i + 1; j < 6; j++) {
+        for (let i = 0; i < NUM_LINKS; i++) {
+            for (let j = i + 1; j < NUM_LINKS; j++) {
                 assert.notEqual(graphies[i], graphies[j]);
             }
         }
     });
 
     it('tests should have unique Graphie links', function() {
-        for (let i = 0; i < 6; i++) {
-            for (let j = i + 1; j < 6; j++) {
+        for (let i = 0; i < NUM_LINKS; i++) {
+            for (let j = i + 1; j < NUM_LINKS; j++) {
                 assert.notEqual(graphieLinks[i], graphieLinks[j]);
             }
         }
     });
 
     it('tests should have unique image links', function() {
-        for (let i = 0; i < 6; i++) {
-            for (let j = i + 1; j < 6; j++) {
+        for (let i = 0; i < NUM_LINKS; i++) {
+            for (let j = i + 1; j < NUM_LINKS; j++) {
                 assert.notEqual(images[i], images[j]);
             }
         }
