@@ -78,7 +78,7 @@ const getTranslation = (item) => item.translatedStr;
  * @returns {void}
  */
 function assertSuggestions(allItems, itemsToTranslate, translatedStrs,
-        lang = 'cs') {
+    lang = 'cs') {
     const assistant =
         new TranslationAssistant(allItems, getEnglishStr, getTranslation, lang);
 
@@ -192,28 +192,28 @@ describe('TranslationAssistant', function() {
         });
 
         it('should return null when there\'s nl text inside \\text{}',
-        function() {
-            const allItems = [];
-            const itemsToTranslate = [{
-                englishStr: '$\\text {simplify } 3x = 9$',
-                translatedStr: '',
-            }];
-            const translatedStrs = [null];
+            function() {
+                const allItems = [];
+                const itemsToTranslate = [{
+                    englishStr: '$\\text {simplify } 3x = 9$',
+                    translatedStr: '',
+                }];
+                const translatedStrs = [null];
 
-            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
-        });
+                assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+            });
 
         it('should return null when there\'s nl text inside \\textbf{}',
-        function() {
-            const allItems = [];
-            const itemsToTranslate = [{
-                englishStr: '$\\textbf {simplify } 3x = 9$',
-                translatedStr: '',
-            }];
-            const translatedStrs = [null];
+            function() {
+                const allItems = [];
+                const itemsToTranslate = [{
+                    englishStr: '$\\textbf {simplify } 3x = 9$',
+                    translatedStr: '',
+                }];
+                const translatedStrs = [null];
 
-            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
-        });
+                assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+            });
 
         it('should return the same math', function() {
             const allItems = [];
@@ -256,22 +256,22 @@ describe('TranslationAssistant', function() {
         });
 
         it('should return the same graphie even if translator changed one',
-        function() {
-            const allItems = [{
-                englishStr: graphie1,
-                translatedStr: graphie2,
-            }];
-            const itemsToTranslate = [{
-                englishStr: graphie3,
-                translatedStr: '',
-            }, {
-                englishStr: 'hello',
-                translatedStr: '',
-            }];
-            const translatedStr = [graphie3, null];
+            function() {
+                const allItems = [{
+                    englishStr: graphie1,
+                    translatedStr: graphie2,
+                }];
+                const itemsToTranslate = [{
+                    englishStr: graphie3,
+                    translatedStr: '',
+                }, {
+                    englishStr: 'hello',
+                    translatedStr: '',
+                }];
+                const translatedStr = [graphie3, null];
 
-            assertSuggestions(allItems, itemsToTranslate, translatedStr);
-        });
+                assertSuggestions(allItems, itemsToTranslate, translatedStr);
+            });
 
         it('should return the same image link', function() {
             const imageLink = makeImageLink();
@@ -289,22 +289,22 @@ describe('TranslationAssistant', function() {
         });
 
         it('should return the same imageLink even if translator changed one',
-        function() {
-            const allItems = [{
-                englishStr: image1,
-                translatedStr: image2,
-            }];
-            const itemsToTranslate = [{
-                englishStr: image3,
-                translatedStr: '',
-            }, {
-                englishStr: 'hello',
-                translatedStr: '',
-            }];
-            const translatedStr = [image3, null];
+            function() {
+                const allItems = [{
+                    englishStr: image1,
+                    translatedStr: image2,
+                }];
+                const itemsToTranslate = [{
+                    englishStr: image3,
+                    translatedStr: '',
+                }, {
+                    englishStr: 'hello',
+                    translatedStr: '',
+                }];
+                const translatedStr = [image3, null];
 
-            assertSuggestions(allItems, itemsToTranslate, translatedStr);
-        });
+                assertSuggestions(allItems, itemsToTranslate, translatedStr);
+            });
     });
 });
 
@@ -616,7 +616,7 @@ describe('TranslationAssistant (math-translate)', function() {
         const allItems = [];
         const itemsToTranslate = [
             {englishStr: '$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000 $',
-             translatedStr: ''},
+                translatedStr: ''},
         ];
         const translatedStrs =
            ['$3\\,000{,}5 \\cdot x = 9{,}9 \\mathbin{:} 3\\,300\\,000 $'];
@@ -625,23 +625,24 @@ describe('TranslationAssistant (math-translate)', function() {
     });
 
     it('should handle both thousand sep. AND decimal comma for cs locale',
-    function() {
-        const allItems = [];
-        const itemsToTranslate = [
-            {englishStr: '$3{,}000.500 \\times x = 9.900 \\div 3{,}300{,}000 $',
-             translatedStr: ''},
-        ];
-        const translatedStrs =
+        function() {
+            const allItems = [];
+            const itemsToTranslate = [
+                {englishStr:
+                    '$3{,}000.500 \\times x = 9.900 \\div 3{,}300{,}000 $',
+                translatedStr: ''},
+            ];
+            const translatedStrs =
            ['$3\\,000{,}500 \\cdot x = 9{,}900 \\mathbin{:} 3\\,300\\,000 $'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
-    });
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        });
 
     it('should not translate thousand separator for ja locale', function() {
         const allItems = [];
         const itemsToTranslate = [
             {englishStr: '$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000$',
-             translatedStr: ''},
+                translatedStr: ''},
         ];
         const translatedStrs =
            ['$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000$'];
@@ -650,19 +651,19 @@ describe('TranslationAssistant (math-translate)', function() {
     });
 
     it('should handle extra braces around thousand separator as thin space',
-    function() {
-        const allItems = [{
-            englishStr: 'simplify $2{,}300 20{,}000{,}090$',
-            translatedStr: 'simplifyz $2{\\,}300 20{\\,}000{\\,}090$',
-        }];
-        const itemsToTranslate = [{
-            englishStr: 'simplify $2{,}000{,}000$',
-            translatedStr: '',
-        }];
-        const translatedStrs = ['simplifyz $2\\,000\\,000$'];
+        function() {
+            const allItems = [{
+                englishStr: 'simplify $2{,}300 20{,}000{,}090$',
+                translatedStr: 'simplifyz $2{\\,}300 20{\\,}000{\\,}090$',
+            }];
+            const itemsToTranslate = [{
+                englishStr: 'simplify $2{,}000{,}000$',
+                translatedStr: '',
+            }];
+            const translatedStrs = ['simplifyz $2\\,000\\,000$'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs);
-    });
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs);
+        });
 
     it('should allow ~ as a thousand separator', function() {
         const allItems = [{
@@ -710,7 +711,7 @@ describe('TranslationAssistant (math-translate)', function() {
         const allItems = [];
         const itemsToTranslate = [
             {englishStr: '$3{,}000.500 \\times x = 9.900 \\div 3{,}300{,}000$',
-             translatedStr: ''},
+                translatedStr: ''},
         ];
         const translatedStrs =
            ['$3000.500 \\times x = 9.900 \\div 3300000$'];
@@ -722,7 +723,7 @@ describe('TranslationAssistant (math-translate)', function() {
         const allItems = [];
         const itemsToTranslate = [
             {englishStr: '$3{,}000.5 \\times x = 9.9 \\div 3{,}300{,}000 $',
-             translatedStr: ''},
+                translatedStr: ''},
         ];
         const translatedStrs =
            ['$3.000{,}5 \\times x = 9{,}9 \\div 3.300.000 $'];
@@ -731,17 +732,18 @@ describe('TranslationAssistant (math-translate)', function() {
     });
 
     it('should handle thousand separator AND decimal comma for pt locale',
-    function() {
-        const allItems = [];
-        const itemsToTranslate = [
-            {englishStr: '$3{,}000.540 \\times x = 9.900 \\div 3{,}300{,}000 $',
-             translatedStr: ''},
-        ];
-        const translatedStrs =
+        function() {
+            const allItems = [];
+            const itemsToTranslate = [
+                {englishStr:
+                    '$3{,}000.540 \\times x = 9.900 \\div 3{,}300{,}000 $',
+                translatedStr: ''},
+            ];
+            const translatedStrs =
            ['$3.000{,}540 \\times x = 9{,}900 \\div 3.300.000 $'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
-    });
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs, 'pt');
+        });
 
     it('should translate math with \\text', function() {
         const allItems = [{
@@ -932,19 +934,19 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
     });
 
     it('should NOT translate if template contains conflicting notation',
-    function() {
-        const lang = MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT[0];
-        const allItems = [
-            {englishStr: 'Simplify $3 \\times x \\times y$',
-            translatedStr: 'Simplifyz $3 \\cdot x \\times y$'},
-        ];
-        const itemsToTranslate = [
-            {englishStr: 'Simplify $6 \\times y$', translatedStr: ''},
-        ];
-        const translatedStrs = [null];
+        function() {
+            const lang = MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT[0];
+            const allItems = [
+                {englishStr: 'Simplify $3 \\times x \\times y$',
+                    translatedStr: 'Simplifyz $3 \\cdot x \\times y$'},
+            ];
+            const itemsToTranslate = [
+                {englishStr: 'Simplify $6 \\times y$', translatedStr: ''},
+            ];
+            const translatedStrs = [null];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
-    });
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        });
 
     it('should translate only math present in the template', function() {
         const lang = 'id';
@@ -953,7 +955,7 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
 
         const allItems = [
             {englishStr: '$6 \\div 3$',
-             translatedStr: '$6 \\mathbin{:} 3$',
+                translatedStr: '$6 \\mathbin{:} 3$',
             },
         ];
         const itemsToTranslate = [
@@ -977,7 +979,7 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
         const lang = 'id';
         const allItems = [
             {englishStr: '$6 \\div 3 \\times y$',
-             translatedStr: '$6 \\mathbin{:} 3 \\cdot y$',
+                translatedStr: '$6 \\mathbin{:} 3 \\cdot y$',
             },
         ];
         const itemsToTranslate = [
@@ -1036,19 +1038,19 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
     });
 
     it('should detect and translate coordinates in math-only strings',
-    function() {
-        const lang = 'cs';
-        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
-        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
+        function() {
+            const lang = 'cs';
+            assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+            assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
 
-        const allItems = [];
-        const itemsToTranslate = [
-            {englishStr: '$(2,1) (x,y) (\\green4,1.5)$', translatedStr: ''},
-        ];
-        const translatedStrs = ['$[2;1] [x;y] [\\green4;1{,}5]$'];
+            const allItems = [];
+            const itemsToTranslate = [
+                {englishStr: '$(2,1) (x,y) (\\green4,1.5)$', translatedStr: ''},
+            ];
+            const translatedStrs = ['$[2;1] [x;y] [\\green4;1{,}5]$'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
-    });
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        });
 
     it('should handle superflous spaces in English coordinates', function() {
         const lang = 'cs';
@@ -1057,7 +1059,7 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
 
         const allItems = [
             {englishStr: 'coordinates $( 0,1)$',
-             translatedStr: 'souradnice $[0;1]$'},
+                translatedStr: 'souradnice $[0;1]$'},
         ];
         const itemsToTranslate = [
             {englishStr: 'coordinates $( 2, 1)$', translatedStr: ''},
@@ -1074,7 +1076,7 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
 
         const allItems = [
             {englishStr: 'coordinates $(0,1 )$',
-             translatedStr: 'souradnice $[0; 1 ]$'},
+                translatedStr: 'souradnice $[0; 1 ]$'},
         ];
         const itemsToTranslate = [
             {englishStr: 'coordinates $(2,1)$', translatedStr: ''},
@@ -1085,24 +1087,26 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
     });
 
     it('should translate both coordinates and intervals in separate math bits',
-    function() {
-        const lang = 'cs';
-        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
-        assert(MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS.includes(lang));
-        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
+        function() {
+            const lang = 'cs';
+            assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+            assert(MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS
+                .includes(lang));
+            assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
 
-        const allItems = [
-            {englishStr: 'Intervals $[0,3] (-1,3)$ coordinates $(0,0)$',
-            translatedStr: 'Ints $⟨0;3⟩ (-1;3)$ coords $[0;0]$'},
-        ];
-        const itemsToTranslate = [
-            {englishStr: 'Intervals $[0,3) (-5,\\red3]$ coordinates $(-1,-1)$',
-            translatedStr: ''},
-        ];
-        const translatedStrs = ['Ints $⟨0;3) (-5;\\red3⟩$ coords $[-1;-1]$'];
+            const allItems = [
+                {englishStr: 'Intervals $[0,3] (-1,3)$ coordinates $(0,0)$',
+                    translatedStr: 'Int $⟨0;3⟩ (-1;3)$ coords $[0;0]$'},
+            ];
+            const itemsToTranslate = [
+                {englishStr:
+                    'Intervals $[0,3) (-5,\\red3]$ coordinates $(-1,-1)$',
+                translatedStr: ''},
+            ];
+            const translatedStrs = ['Int $⟨0;3) (-5;\\red3⟩$ coords $[-1;-1]$'];
 
-        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
-    });
+            assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+        });
 
     it('should translate open intervals according to a template', function() {
         const lang = 'fr';
@@ -1110,11 +1114,11 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
 
         const allItems = [
             {englishStr: 'Open intervals $(0,3) (\\blueD{-1},0)$',
-            translatedStr: 'Ints $]0~;3[ ]\\blueD{-1}~;0[$'},
+                translatedStr: 'Ints $]0~;3[ ]\\blueD{-1}~;0[$'},
         ];
         const itemsToTranslate = [
             {englishStr: 'Open intervals $(0,3)$',
-            translatedStr: ''},
+                translatedStr: ''},
         ];
         const translatedStrs = ['Ints $]0~;3[$'];
 
@@ -1128,13 +1132,13 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
 
         const allItems = [
             {englishStr: 'Coordinates $(0,3.\\overline{3}) (\\blueD{-1},0)$',
-            translatedStr: 'Coords $[0;3{,}\\overline{3}] [\\blueD{-1};0]$'},
+                translatedStr: 'Cords $[0;3{,}\\overline{3}] [\\blueD{-1};0]$'},
         ];
         const itemsToTranslate = [
             {englishStr: 'Coordinates $(0,3)$',
-            translatedStr: ''},
+                translatedStr: ''},
         ];
-        const translatedStrs = ['Coords $[0;3]$'];
+        const translatedStrs = ['Cords $[0;3]$'];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });

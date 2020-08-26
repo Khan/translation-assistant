@@ -10,16 +10,16 @@ const {
 // Matches math delimited by $, e.g.
 // $x^2 + 2x + 1 = 0$
 // $\text{cost} = \$4$
-const MATH_REGEX = /\$(\\\$|[^\$])+\$/g;
+const MATH_REGEX = /\$(\\\$|[^$])+\$/g;
 
 // Matches graphie strings,
 // e.g. ![](web+graphie://ka-perseus-graphie.s3.amazonaws.com/542f2b4e297910eed545a5c29c3866918655bab4)
-const GRAPHIE_REGEX = /\!\[\]\([^)]+\)/g;
+const GRAPHIE_REGEX = /!\[\]\([^)]+\)/g;
 
 // Matches pure image and graphie link strings,
 // e.g. https://ka-perseus-graphie.s3.amazonaws.com/e75c49cb5753492629016169933ab63af3b9f122.png
 // or web+graphie://ka-perseus-graphie.s3.amazonaws.com/542f2b4e297910eed545a5c29c3866918655bab4
-const IMAGE_REGEX = /https:[^\s]+\.png|web\+graphie:[a-z0-9\.\-/]+(?=[\s,]|$)/g;
+const IMAGE_REGEX = /https:[^\s]+\.png|web\+graphie:[a-z0-9.\-/]+(?=[\s,]|$)/g;
 
 // Matches widget strings, e.g. [[☃ Expression 1]]
 const WIDGET_REGEX = /\[\[[\u2603][^\]]+\]\]/g;
@@ -282,7 +282,7 @@ function getMathDictionary(englishStr, translatedStr, lang) {
             if (match.test(key)) {
                 const input = inputMap[key];
 
-                if (!outputMap.hasOwnProperty(key)) {
+                if (!Object.prototype.hasOwnProperty.call(outputMap, key)) {
                     // If outputMap is missing a key that exists in inputMap it
                     // means that the math differs between the input and output
                     // and getMapping will throw and error in that case.
@@ -370,7 +370,7 @@ function createTemplate(englishStr, translatedStr, lang) {
                 getMapping(englishStr, translatedStr, lang, WIDGET_REGEX),
             mathDictionary: translatedDictionary,
         };
-    } catch(e) {
+    } catch (e) {
         return e;
     }
 }
@@ -394,7 +394,7 @@ function rtrim(str) {
  * @returns {String} The string with escaped characters
  */
 function escapeForRegex(str) {
-    return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    return str.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 /**
@@ -419,7 +419,7 @@ function replaceTextInMath(englishMath, dict) {
         textCommands.forEach((cmd) => {
             const escapedEnglishText = escapeForRegex(englishText);
             const regex = new RegExp(`\\\\${cmd}(\\s*){${escapedEnglishText}}`,
-                  'g');
+                'g');
             // make sure the spacing matches in the replacement
             const replacement = `\\${cmd}$1{${translatedText}}`;
             translatedMath = translatedMath.replace(regex, replacement);
@@ -464,14 +464,15 @@ function populateTemplate(template, englishStr, lang) {
             englishMapping = getMapping(
                 englishStr, englishStr, 'en', MATH_REGEX, englishDictionary);
         } catch (error) {
-            console.error(  // eslint-disable-line no-console
+            // eslint-disable-next-line no-console
+            console.error(
                 'Unexpected error in TranslationAssistant.populateTemplate');
             return undefined;
         }
         // And verify that the math mapping is identical to the one in the
         // template.
         if (JSON.stringify(englishMapping) !== JSON.stringify(
-                template.mathMapping.englishToEnglish)) {
+            template.mathMapping.englishToEnglish)) {
             // Inappropriate mapping can result in math being altered between
             // the English string and the suggested translation string.
             // For example a template created from string '$4$ x $4$ y $5$'
@@ -498,8 +499,8 @@ function populateTemplate(template, englishStr, lang) {
     let widgetIndex = 0;
 
     maths = maths
-      .map((math) => translateMath(math, allTranslatedMaths, lang))
-      .map((math) => replaceTextInMath(math, template.mathDictionary));
+        .map((math) => translateMath(math, allTranslatedMaths, lang))
+        .map((math) => replaceTextInMath(math, template.mathDictionary));
 
     return englishLines.map((englishLine, index) => {
         const templateLine = template.lines[index];
@@ -590,11 +591,12 @@ class TranslationAssistant {
             // Widgets should never be changed.
             // TODO(kevinb) handle multiple non-nl_text items
             if (/^(__GRAPHIE__|__IMAGE__|__WIDGET__)$/
-                    .test(normalObj.str)) {
+                .test(normalObj.str)) {
                 return [item, englishStr];
             }
 
-            if (suggestionGroups.hasOwnProperty(normalStr)) {
+            if (Object.prototype.hasOwnProperty.
+                call(suggestionGroups, normalStr)) {
                 const {template} = suggestionGroups[normalStr];
 
                 // This error is probably due to math being different between

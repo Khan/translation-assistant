@@ -62,12 +62,12 @@ describe('MathTranslator (translateMath)', function() {
     });
 
     it('should translate both thousand sep. and decimal point for cs locale',
-    function() {
-        const englishStr = '1{,}000{,}000.700 + 9{,}000.000';
-        const translatedStr = '1\\,000\\,000{,}700 + 9\\,000{,}000';
-        const outputStr = translateMath(englishStr, '', 'cs');
-        assert.equal(outputStr, translatedStr);
-    });
+        function() {
+            const englishStr = '1{,}000{,}000.700 + 9{,}000.000';
+            const translatedStr = '1\\,000\\,000{,}700 + 9\\,000{,}000';
+            const outputStr = translateMath(englishStr, '', 'cs');
+            assert.equal(outputStr, translatedStr);
+        });
 
     it('should translate notation for multiplication', function() {
         MATH_RULES_LOCALES.TIMES_AS_CDOT.forEach(function(locale) {
@@ -164,12 +164,12 @@ describe('MathTranslator (translateMath)', function() {
     });
 
     it('should use arabic decimal comma and no thousand separator for pashto',
-    function() {
-        const englishStr = '1{,}234{,}567.890';
-        const translatedStr = '۱۲۳۴۵۶۷{،}۸۹۰';
-        const outputStr = translateMath(englishStr, '', 'ps');
-        assert.equal(outputStr, translatedStr);
-    });
+        function() {
+            const englishStr = '1{,}234{,}567.890';
+            const translatedStr = '۱۲۳۴۵۶۷{،}۸۹۰';
+            const outputStr = translateMath(englishStr, '', 'ps');
+            assert.equal(outputStr, translatedStr);
+        });
 
     it('should translate repeating decimal numbers', function() {
         // We cannot iterate over all locales from DECIMAL_COMMA
@@ -191,26 +191,26 @@ describe('MathTranslator (translateMath)', function() {
     });
 
     it('should translate \\overline in repeating decimals as \\dot',
-    function() {
-        const locale = 'bn';
-        assert(MATH_RULES_LOCALES.OVERLINE_AS_DOT.includes(locale));
+        function() {
+            const locale = 'bn';
+            assert(MATH_RULES_LOCALES.OVERLINE_AS_DOT.includes(locale));
 
-        const englishStr = '1.\\overline{3} + 9.\\overline{44}';
-        const translatedStr = '1.\\dot{3} + 9.\\dot{4}\\dot{4}';
-        const outputStr = translateMath(englishStr, '', locale);
-        assert.equal(outputStr, translatedStr);
-    });
+            const englishStr = '1.\\overline{3} + 9.\\overline{44}';
+            const translatedStr = '1.\\dot{3} + 9.\\dot{4}\\dot{4}';
+            const outputStr = translateMath(englishStr, '', locale);
+            assert.equal(outputStr, translatedStr);
+        });
 
     it('should translate \\overline in repeating decimals as parentheses',
-    function() {
-        const locale = 'pt-pt';
-        assert(MATH_RULES_LOCALES.OVERLINE_AS_PARENS.includes(locale));
+        function() {
+            const locale = 'pt-pt';
+            assert(MATH_RULES_LOCALES.OVERLINE_AS_PARENS.includes(locale));
 
-        const englishStr = '1.\\overline{3} + 9.\\overline{44}';
-        const translatedStr = '1{,}(3) + 9{,}(44)';
-        const outputStr = translateMath(englishStr, '', locale);
-        assert.equal(outputStr, translatedStr);
-    });
+            const englishStr = '1.\\overline{3} + 9.\\overline{44}';
+            const translatedStr = '1{,}(3) + 9{,}(44)';
+            const outputStr = translateMath(englishStr, '', locale);
+            assert.equal(outputStr, translatedStr);
+        });
 
     it('should translate decimals wrapped in color commands', function() {
         const englishStr =
@@ -251,44 +251,49 @@ describe('MathTranslator (translateMath)', function() {
 
 describe('MathTranslator (normalizeTranslatedMath)', function() {
     it('should strip extra braces around thousand separator as thin space',
-    function() {
-        const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
-        const normalizedStr = '1\\,000\\,000 + 9\\,000';
+        function() {
+            const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
+            const normalizedStr = '1\\,000\\,000 + 9\\,000';
 
-        MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(function(locale) {
-            const outputStr = normalizeTranslatedMath(translatedStr, locale);
-            assert.equal(outputStr, normalizedStr);
+            MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(
+                function(locale) {
+                    const outputStr =
+                        normalizeTranslatedMath(translatedStr, locale);
+                    assert.equal(outputStr, normalizedStr);
+                });
         });
-    });
 
     it('should strip extra braces around thousand separator as a dot',
-    function() {
-        const translatedStr = '1{.}000{.}000 + 9.000 + 1{,}2';
-        const normalizedStr = '1.000.000 + 9.000 + 1{,}2';
+        function() {
+            const translatedStr = '1{.}000{.}000 + 9.000 + 1{,}2';
+            const normalizedStr = '1.000.000 + 9.000 + 1{,}2';
 
-        MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT.forEach(function(locale) {
-            const outputStr = normalizeTranslatedMath(translatedStr, locale);
-            assert.equal(outputStr, normalizedStr);
+            MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT
+                .forEach(function(locale) {
+                    const outputStr =
+                        normalizeTranslatedMath(translatedStr, locale);
+                    assert.equal(outputStr, normalizedStr);
+                });
         });
-    });
 
     it('should not strip extra braces around thousand separator for en locale',
-    function() {
-        const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
-        const normalizedStr = '1{\\,}000{\\,}000 + 9\\,000';
-        const outputStr = normalizeTranslatedMath(translatedStr, 'en');
-        assert.equal(outputStr, normalizedStr);
-    });
+        function() {
+            const translatedStr = '1{\\,}000{\\,}000 + 9\\,000';
+            const normalizedStr = '1{\\,}000{\\,}000 + 9\\,000';
+            const outputStr = normalizeTranslatedMath(translatedStr, 'en');
+            assert.equal(outputStr, normalizedStr);
+        });
 
     it('should convert ~ to thin space as thousand separator', function() {
         const translatedStr = '1~000~000 + 9~000';
         const normalizedStr = '1\\,000\\,000 + 9\\,000';
 
         MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(
-        function(locale) {
-            const outputStr = normalizeTranslatedMath(translatedStr, locale);
-            assert.equal(outputStr, normalizedStr);
-        });
+            function(locale) {
+                const outputStr =
+                    normalizeTranslatedMath(translatedStr, locale);
+                assert.equal(outputStr, normalizedStr);
+            });
     });
 
     it('should convert {~} to thin space as thousand separator', function() {
@@ -322,13 +327,13 @@ describe('MathTranslator (normalizeTranslatedMath)', function() {
     });
 
     it('should strip extra space in coordinates/intervals',
-    function() {
+        function() {
         // Striping space after opening brackets and before closing brackets
-        const translatedStr = '( 1,2 ) [ 3; 4] ] 1~,2[ ⟨ a;\\red5 ⟩';
-        const normalizedStr = '(1,2) [3; 4] ]1~,2[ ⟨a;\\red5⟩';
-        const outputStr = normalizeTranslatedMath(translatedStr, 'cs');
-        assert.equal(outputStr, normalizedStr);
-    });
+            const translatedStr = '( 1,2 ) [ 3; 4] ] 1~,2[ ⟨ a;\\red5 ⟩';
+            const normalizedStr = '(1,2) [3; 4] ]1~,2[ ⟨a;\\red5⟩';
+            const outputStr = normalizeTranslatedMath(translatedStr, 'cs');
+            assert.equal(outputStr, normalizedStr);
+        });
 });
 
 describe('MathTranslator (maybeTranslateMath)', function() {
@@ -532,28 +537,28 @@ describe('MathTranslator (maybeTranslateMath)', function() {
     });
 
     it('should only support coord/interval notation specific for given lang',
-    function() {
-        let locale = 'fr';
-        assert(!MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale));
+        function() {
+            let locale = 'fr';
+            assert(!MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale));
 
-        const englishStr = '(a, b) (1,2)';
-        const translatedStr = englishStr;
-        let template = '[1,2]';
-        let output = maybeTranslateMath(englishStr, template, locale);
-        assert.equal(output, translatedStr);
+            const englishStr = '(a, b) (1,2)';
+            const translatedStr = englishStr;
+            let template = '[1,2]';
+            let output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
 
-        locale = 'cs';
-        assert(!MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(locale));
-        template = ']1,2[';
-        output = maybeTranslateMath(englishStr, template, locale);
-        assert.equal(output, translatedStr);
+            locale = 'cs';
+            assert(!MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(locale));
+            template = ']1,2[';
+            output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
 
-        locale = 'bg';
-        assert(!MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale));
-        template = '[1,2]';
-        output = maybeTranslateMath(englishStr, template, locale);
-        assert.equal(output, translatedStr);
-    });
+            locale = 'bg';
+            assert(!MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale));
+            template = '[1,2]';
+            output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
+        });
 
     it('should translate closed intervals without template', function() {
         const locale = 'fr';
@@ -696,16 +701,16 @@ describe('detectCoordinates', function() {
     });
 
     it('should NOT detect coordinates that could also be open intervals',
-    function() {
-        let englishMath = '(2.1,4)';
-        assert(!detectCoordinates(englishMath));
+        function() {
+            let englishMath = '(2.1,4)';
+            assert(!detectCoordinates(englishMath));
 
-        englishMath = '(2,b)';
-        assert(!detectCoordinates(englishMath));
+            englishMath = '(2,b)';
+            assert(!detectCoordinates(englishMath));
 
-        englishMath = '(a,b)';
-        assert(!detectCoordinates(englishMath));
-    });
+            englishMath = '(a,b)';
+            assert(!detectCoordinates(englishMath));
+        });
 });
 
 describe('MATH_RULES_LOCALES', function() {
@@ -768,7 +773,8 @@ describe('MATH_RULES_LOCALES', function() {
     it('should not have conflicting rules for intervals', function() {
         MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.forEach(function(locale) {
             assert(
-            ! MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS.includes(locale)
+                ! MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS
+                    .includes(locale)
             );
         });
     });
