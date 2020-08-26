@@ -16,7 +16,8 @@ const {MATH_RULES_LOCALES} = require('../lib/math-translator');
  */
 function makeGraphie() {
     const baseURL = 'web+graphie://ka-perseus-graphie.s3.amazonaws.com';
-    const id = Date.now() + (1000 * Math.random() | 0);
+    const id = Date.now() + (100000 * Math.random() | 0);
+    console.log(id);
     return `![](${baseURL}/${id})`;
 }
 
@@ -31,7 +32,7 @@ for (let i = 0; i < 6; i++) {
  */
 function makeImageLink() {
     const baseURL = 'https://ka-perseus-graphie.s3.amazonaws.com';
-    const id = Date.now() + (1000 * Math.random() | 0);
+    const id = Date.now() + (100000 * Math.random() | 0);
     return `${baseURL}/${id}.png`;
 }
 
@@ -46,7 +47,7 @@ for (let i = 0; i < 6; i++) {
  */
 function makeGraphieLink() {
     const baseURL = 'web+graphie://ka-perseus-graphie.s3.amazonaws.com';
-    const id = Date.now() + (1000 * Math.random() | 0);
+    const id = Date.now() + (100000 * Math.random() | 0);
     return `${baseURL}/${id}`;
 }
 
@@ -235,16 +236,15 @@ describe('TranslationAssistant', function() {
         });
 
         it('should return the same graphie', function() {
-            const graphie = makeGraphie();
             const allItems = [];
             const itemsToTranslate = [{
-                englishStr: graphie,
+                englishStr: graphies[0],
                 translatedStr: '',
             }, {
                 englishStr: 'hello',
                 translatedStr: '',
             }];
-            const translatedStr = [graphie, null];
+            const translatedStr = [graphies[0], null];
 
             assertSuggestions(allItems, itemsToTranslate, translatedStr);
         });
