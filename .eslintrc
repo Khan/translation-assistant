@@ -33,6 +33,7 @@
         "object-curly-spacing": [2, "never"],
         "no-array-constructor": 2,
         "no-new-object": 2,
+        "no-console": 2,
         "one-var": [2, "never"]
     },
     "env": {
