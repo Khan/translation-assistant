@@ -1103,6 +1103,33 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
             assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
         });
 
+    it('should handle complicated coordinates', function() {
+        const lang = 'cs';
+        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(lang));
+
+        const allItems = [
+            {englishStr:
+                'maximum $\\left(-3\\pi,7\\right)$ midline $(-2.75\\pi,4)$',
+            translatedStr:
+                'max $\\left[-3\\pi;7\\right]$ mid $[-2{,}75\\pi;4]$',
+            },
+        ];
+
+        const itemsToTranslate = [
+            {englishStr:
+                'maximum $\\left(\\dfrac{3}{4}\\pi,1\\right)$ ' +
+                'midline $(-0.5\\pi,-2)$',
+            translatedStr: ''},
+        ];
+
+        const translatedStrs = [
+            'max $\\left[\\dfrac{3}{4}\\pi;1\\right]$ mid $[-0{,}5\\pi;-2]$',
+        ];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
+
     it('should translate open intervals according to a template', function() {
         const lang = 'fr';
         assert(MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(lang));
