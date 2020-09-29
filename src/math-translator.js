@@ -10,13 +10,13 @@
  */
 const MATH_RULES_LOCALES = {
     // Number formats
-    THOUSAND_SEP_AS_THIN_SPACE: ['az', 'bg', 'cs', 'de', 'fr', 'hu', 'it',
-        'lv', 'nb', 'nl', 'pl', 'pt-pt', 'ro', 'sv', 'uk'],
-    THOUSAND_SEP_AS_DOT: ['da', 'el', 'id', 'pt', 'sr', 'tr' ],
-    NO_THOUSAND_SEP: ['hy', 'ka', 'ko', 'ps' ],
+    THOUSAND_SEP_AS_THIN_SPACE: ['az', 'bg', 'cs', 'de', 'fr', 'hu', 'it', 'ka',
+        'km', 'ky', 'lv', 'nb', 'nl', 'pl', 'pt-pt', 'ro', 'sv', 'uk'],
+    THOUSAND_SEP_AS_DOT: ['da', 'el', 'id', 'pt', 'sr', 'tr', 'vi'],
+    NO_THOUSAND_SEP: ['hy', 'kk', 'ko', 'ps' ],
     DECIMAL_COMMA: ['az', 'bg', 'cs', 'da', 'de', 'el', 'fr', 'hu', 'hy', 'id',
-        'it', 'ka', 'lv', 'nb', 'nl', 'pl', 'pt', 'pt-pt', 'ro', 'ru', 'sr',
-        'sv', 'tr'],
+        'it', 'ka', 'kk', 'ky', 'lv', 'nb', 'nl', 'pl', 'pt', 'pt-pt', 'ro',
+        'ru', 'sr', 'sv', 'tr', 'vi'],
     ARABIC_COMMA: ['ps'],
     PERSO_ARABIC_NUMERALS: ['ps'],
     // Notations for repeating decimals
@@ -25,7 +25,8 @@ const MATH_RULES_LOCALES = {
     OVERLINE_AS_DOT: ['bn', 'hu', 'ja'],
     // 1 / 3 = 0.\overline{3} -> 0.(3)
     // 1 / 7 = 0.\overline{142857} -> 0.(142857)
-    OVERLINE_AS_PARENS: ['az', 'bg', 'hy', 'lv', 'pl', 'pt-pt', 'ro'],
+    OVERLINE_AS_PARENS: ['az', 'bg', 'hy', 'ka', 'kk', 'ky', 'lv', 'pl',
+        'pt-pt', 'ro', 'ru', 'vi'],
 
     // Intervals and cartesian coordinates
     // (a,b) - US open interval or coordinates
@@ -43,22 +44,26 @@ const MATH_RULES_LOCALES = {
     TIMES_AS_CDOT: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'lv', 'nb', 'pl',
         'ro', 'sr', 'sv' ],
     CDOT_AS_TIMES: [ 'fr', 'ps', 'pt-pt'],
-    DIV_AS_COLON: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'it', 'lv', 'nb',
-        'pl', 'pt-pt', 'ro', 'ru', 'uk'],
+    DIV_AS_COLON: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'it', 'ky', 'lv',
+        'nb', 'pl', 'pt-pt', 'ro', 'ru', 'sv', 'uk'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
-    TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'lv', 'pt', 'pt-pt', 'ro'],
+    TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'kk', 'km', 'ky', 'lv', 'pl',
+        'pt', 'pt-pt', 'ro', 'ru'],
     COT_AS_COTG: ['cs', 'pt', 'pt-pt'],
-    COT_AS_CTG: ['az', 'bg', 'hu', 'hy', 'lv', 'ro'],
-    CSC_AS_COSEC: ['az', 'bg', 'bn', 'cs', 'gu', 'hi', 'kn', 'lv', 'my', 'pa',
-        'ro'],
+    COT_AS_CTG: ['az', 'bg', 'hu', 'hy', 'kk', 'km', 'ky', 'lv', 'pl', 'ro',
+        'ru'],
+    CSC_AS_COSEC: ['as', 'az', 'bg', 'bn', 'cs', 'gu', 'hi', 'kn', 'ky', 'lv',
+        'mr', 'my', 'pa', 'pl', 'ro', 'ru', 'sv', 'ta', 'te'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
     // Rules conditional on the translated template
     MAYBE_DIV_AS_COLON: ['id', 'lol'],
-    MAYBE_TIMES_AS_CDOT: ['bn', 'el', 'gu', 'hi', 'id', 'it', 'ja', 'ka', 'kn',
-        'ko', 'my', 'nl', 'pa', 'pt', 'ru', 'ta', 'te', 'uk', 'zh-hans'],
-    MAYBE_CDOT_AS_TIMES: ['bn', 'el', 'gu', 'hi', 'id', 'it', 'ja', 'ka', 'kn',
-        'ko', 'my', 'nl', 'pa', 'pt', 'ru', 'ta', 'te', 'uk', 'zh-hans'],
+    MAYBE_TIMES_AS_CDOT: ['bn', 'el', 'gu', 'hi', 'id', 'it', 'ja', 'ka', 'kk',
+        'km', 'kn', 'ko', 'mr', 'my', 'nl', 'pa', 'pt', 'ru', 'ta', 'te', 'th',
+        'uk', 'vi', 'zh-hans'],
+    MAYBE_CDOT_AS_TIMES: ['bn', 'el', 'gu', 'hi', 'id', 'it', 'ja', 'ka', 'kk',
+        'km', 'kn', 'ko', 'mr', 'my', 'nl', 'pa', 'pt', 'ru', 'ta', 'te', 'th',
+        'uk', 'vi', 'zh-hans'],
 };
 
 
