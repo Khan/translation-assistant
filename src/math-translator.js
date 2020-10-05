@@ -443,7 +443,8 @@ function getDecNumberRegexString(lang, capture = true) {
     // were defined at some point
     const katexColorMacros = KATEX_BASE_COLORS.join('|');
 
-    const integerPart = `[0-9]+|\\\\(?:${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
+    const integerPart =
+        `-?[0-9]+|-?\\\\(?:${katexColorMacros})[A-Z]?\\{-?[0-9]+\\}`;
     // Decimal part is different from integer part
     // because it can contain \\overline
     // TODO: Some langs do not use \\overline, but \\dot
@@ -499,14 +500,23 @@ function getEscapedDecimalSeparator(lang) {
  */
 function getOrderedPairRegexString(lang) {
     const katexColorMacros = `\\\\(?:${KATEX_BASE_COLORS.join('|')})[A-Z]?`;
-    // Assuming single-letter variables and numbers below 1000
-    // (without thousand separator)
+    // Assuming single-letter variables (or \pi) and numbers below 1000
+    // (without thousand separator) or combinations, such as '2\\pi' or '2.1b'
     const integer =
       `-?[0-9]+|-?${katexColorMacros}\\{-?[0-9]+\\}|-?${katexColorMacros}[0-9]`;
-    const variable = `[a-z]|${katexColorMacros}\\{[a-z]\\}`;
+    const variable = `\\\\pi|[a-z]|${katexColorMacros}\\{[a-z]\\}`;
     const decimal = getDecNumberRegexString(lang,
         /* don't include capture groups */ false);
-    const numberOrLetter = `${variable}|${decimal}|${integer}`;
+
+    const fracArgument = `(?:${variable}|${integer})`;
+    // Match '\\frac{1}{2}'
+    let frac = `-?\\\\d?frac\\{${fracArgument}\\}\\{${fracArgument}\\}`;
+    // Match '\frac{3}{4}\\pi'
+    frac = `${frac}${fracArgument}?`;
+
+    const numberAndOrLetter =
+        `${frac}|${variable}|(?:${decimal}|${integer})(?:${variable})?`;
+
     // NOTE(danielhollas): We allow comma and semicolon for all langs
     // as separators, even though maybe some langs use only comma.
     // Since the US strings always have commas (I think),
@@ -520,7 +530,7 @@ function getOrderedPairRegexString(lang) {
     // Support LaTeX spaces, e.g. '4~; 3' (used in e.g. French notation)
     const space = '(?:\\\\,|~|\\s)*';
     const sep = `${space}[${separators}]${space}`;
-    return `\\s*(${numberOrLetter})(${sep})(${numberOrLetter})\\s*`;
+    return `\\s*(${numberAndOrLetter})(${sep})(${numberAndOrLetter})\\s*`;
 }
 
 
@@ -540,12 +550,14 @@ function getOrderedPairRegexString(lang) {
 function detectClosedInterval(math) {
     const lang = 'en';
     const interval = getOrderedPairRegexString(lang);
-    const closedInterval = `\\[${interval}\\]`;
-    const leftClosedInterval = `\\[${interval}\\)`;
-    const rightClosedInterval = `\\(${interval}\\]`;
-    return math.match(closedInterval) ||
-        math.match(leftClosedInterval) ||
-        math.match(rightClosedInterval);
+
+    const closedInterval = new RegExp(wrapParens(interval, '[', ']'), 'g');
+    const leftClosedInterval = new RegExp(wrapParens(interval, '[', ')'), 'g');
+    const rightClosedInterval = new RegExp(wrapParens(interval, '(', ']'), 'g');
+
+    return closedInterval.test(math) ||
+        leftClosedInterval.test(math) ||
+        rightClosedInterval.test(math);
 }
 
 /**
@@ -562,7 +574,8 @@ function detectClosedInterval(math) {
 function detectCoordinates(math) {
     const lang = 'en';
     const coords = getOrderedPairRegexString(lang);
-    const coordsRegex = new RegExp(`\\(${coords}\\)`, 'g');
+    const coordsRegex =
+        new RegExp(wrapParens(coords, '(', ')'), 'g');
     let match;
     while ( (match = coordsRegex.exec(math)) !== null &&
         match.length === 4) {
@@ -608,6 +621,27 @@ function getSeparator(template, regex, lang) {
 }
 
 /**
+ * A helper function for building coordinates/intervals regexes.
+ *
+ * The input regex string is wrapped in custom left and right
+ * parentheses and the optional LaTeX \left and \right commands are added
+ * (these are used by content creators so that the sizes of parentheses
+ * respect the size of the expression that is inside them).
+ *
+ * @param {string} regex Regex string to be wrapped in parentheses
+ * @param {string} left left parenthesis character
+ * @param {string} right right parenthesis character
+ * @param {bool} capture capture the \left|\right commands?
+ * @returns {string} Regex string
+ */
+function wrapParens(regex, left, right, capture = false) {
+    if (capture)
+        return `(\\\\left)?\\${left}${regex}(\\\\right)?\\${right}`;
+    else
+        return `(?:\\\\left)?\\${left}${regex}(?:\\\\right)?\\${right}`;
+}
+
+/**
  * Translates notation for cartesian coordinates, such as:
  * (3,0) or (x,y)
  *
@@ -621,21 +655,21 @@ function getSeparator(template, regex, lang) {
  */
 function translateCoordinates(math, template, lang) {
     const coordsUS = getOrderedPairRegexString('en');
-    const coordsRegexUS = new RegExp(`\\(${coordsUS}\\)`, 'g');
 
     const coords = getOrderedPairRegexString(lang);
     let coordsRegex;
     if (MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang)) {
-        coordsRegex = new RegExp(`\\[${coords}\\]`);
+        coordsRegex = new RegExp(wrapParens(coords, '[', ']'));
     } else {
-        coordsRegex = new RegExp(`\\(${coords}\\)`);
+        coordsRegex = new RegExp(wrapParens(coords, '(', ')'));
     }
 
     const sep = getSeparator(template, coordsRegex, lang);
 
+    const coordsRegexUS = new RegExp(wrapParens(coordsUS, '(', ')', true), 'g');
     const coordsTranslations = [
         {langs: MATH_RULES_LOCALES.COORDS_AS_BRACKETS,
-            regex: coordsRegexUS, replace: `[$1${sep}$3]`},
+            regex: coordsRegexUS, replace: `$1[$2${sep}$4$5]`},
     ];
 
     coordsTranslations.forEach(function(el) {
@@ -643,7 +677,7 @@ function translateCoordinates(math, template, lang) {
             math = math.replace(el.regex, el.replace);
         } else {
             // For all other langs translate only the separator
-            math = math.replace(el.regex, `($1${sep}$3)`);
+            math = math.replace(el.regex, `$1($2${sep}$4$5)`);
         }
     });
 
@@ -661,43 +695,48 @@ function translateCoordinates(math, template, lang) {
  */
 function translateIntervals(math, template, lang) {
     const intervalUS = getOrderedPairRegexString('en');
-    const closedInterval = new RegExp(`\\[${intervalUS}\\]`, 'g');
-    const openInterval = new RegExp(`\\(${intervalUS}\\)`, 'g');
-    const leftClosedInterval = new RegExp(`\\[${intervalUS}\\)`, 'g');
-    const rightClosedInterval = new RegExp(`\\(${intervalUS}\\]`, 'g');
+    const closedInterval = new RegExp(
+        wrapParens(intervalUS, '[', ']', true), 'g');
+    const openInterval = new RegExp(
+        wrapParens(intervalUS, '(', ')', true), 'g');
+    const leftClosedInterval = new RegExp(
+        wrapParens(intervalUS, '[', ')', true), 'g');
+    const rightClosedInterval = new RegExp(
+        wrapParens(intervalUS, '(', ']', true), 'g');
 
     // Detect range separator in the template, can be comma or semicolon
     // We expect that if template contains more intervals, they will have
     // the same separator. The can also include any whitespace chars.
     // Again, these need to be consistent in all intervals!
     const interval = getOrderedPairRegexString(lang);
-    const generalInterval = new RegExp(`[[(\\]]${interval}[[)\\]]`);
+    const generalInterval = new RegExp(
+        `(?:\\\\left)?[[(\\]]${interval}(?:\\\\right)?[[)\\]]`);
 
     const sep = getSeparator(template, generalInterval, lang);
 
     const intervalTranslations = [
         // open intervals with inverted brackets
         {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
-            regex: openInterval, replace: `]$1${sep}$3[`},
+            regex: openInterval, replace: `$1]$2${sep}$4$5[`},
         {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
-            regex: closedInterval, replace: `[$1${sep}$3]`},
+            regex: closedInterval, replace: `$1[$2${sep}$4$5]`},
         {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
-            regex: leftClosedInterval, replace: `[$1${sep}$3[`},
+            regex: leftClosedInterval, replace: `$1[$2${sep}$4$5[`},
         {langs: MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS,
-            regex: rightClosedInterval, replace: `]$1${sep}$3]`},
+            regex: rightClosedInterval, replace: `$1]$2${sep}$4$5]`},
         // closed intervals with angle brackets
         // We cannot use \langle|\rangle because of the linter
         // so we insert equivalent unicode chars directly.
         // U+27E8 | ⟨ | \xe2\x9f\xa8 | MATHEMATICAL LEFT ANGLE BRACKET
         // U+27E9 | ⟩ | \xe2\x9f\xa9 | MATHEMATICAL RIGHT ANGLE BRACKET
         {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
-            regex: openInterval, replace: `($1${sep}$3)`},
+            regex: openInterval, replace: `$1($2${sep}$4$5)`},
         {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
-            regex: closedInterval, replace: `⟨$1${sep}$3⟩`},
+            regex: closedInterval, replace: `$1⟨$2${sep}$4$5⟩`},
         {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
-            regex: leftClosedInterval, replace: `⟨$1${sep}$3)`},
+            regex: leftClosedInterval, replace: `$1⟨$2${sep}$4$5)`},
         {langs: MATH_RULES_LOCALES.CLOSED_INT_AS_ANGLE_BRACKETS,
-            regex: rightClosedInterval, replace: `($1${sep}$3⟩`},
+            regex: rightClosedInterval, replace: `$1($2${sep}$4$5⟩`},
     ];
 
     intervalTranslations.forEach(function(el) {
@@ -715,10 +754,10 @@ function translateIntervals(math, template, lang) {
 
     // The only thing we translate here is the separator!
     const separatorTranslations = [
-        {regex: openInterval, replace: `($1${sep}$3)`},
-        {regex: closedInterval, replace: `[$1${sep}$3]`},
-        {regex: leftClosedInterval, replace: `[$1${sep}$3)`},
-        {regex: rightClosedInterval, replace: `($1${sep}$3]`},
+        {regex: openInterval, replace: `$1($2${sep}$4$5)`},
+        {regex: closedInterval, replace: `$1[$2${sep}$4$5]`},
+        {regex: leftClosedInterval, replace: `$1[$2${sep}$4$5)`},
+        {regex: rightClosedInterval, replace: `$1($2${sep}$4$5]`},
     ];
 
     separatorTranslations.forEach(function(el) {
@@ -748,49 +787,52 @@ function translateCoordinatesOrOpenIntervals(math, template, lang) {
         return math;
     }
     const orderedPairUS = getOrderedPairRegexString('en');
-    const coordsOrOpenIntervalUS = new RegExp(`\\(${orderedPairUS}\\)`, 'g');
+    const coordsOrOpenIntervalUS =
+        new RegExp(wrapParens(orderedPairUS, '(', ')', true), 'g');
 
     // First look into the English string
-    let match = math.match(coordsOrOpenIntervalUS);
-    if (!match) {
+    if (!coordsOrOpenIntervalUS.test(math)) {
         return math;
     }
     // Now we know that the English string contains coordinates or intervals
-    // Let's detect them in the template, if we fail,
-    // we return prematurely
+    // Let's detect them in the template.
+    // If we fail, we return prematurely.
     const orderedPair = getOrderedPairRegexString(lang);
-    const coordsOrOpenInterval = new RegExp(`([[(\\]])${orderedPair}([[)\\]])`);
-    match = template.match(coordsOrOpenInterval);
+    const coordsOrOpenInterval = new RegExp(
+        `(?:\\\\left)?([[(\\]])${orderedPair}(?:\\\\right)?([[)\\]])`
+    );
+    const match = template.match(coordsOrOpenInterval);
     if (!match || match.length !== 6) {
         return math;
     }
 
-    const left = match[1];
+    const leftParen = match[1];
     const sep = match[3];
-    const right = match[5];
+    const rightParen = match[5];
 
     // Verify that left and right parentheses|brackets make sense
     // for a given language
-    switch (left) {
+    switch (leftParen) {
     case '[':
-        if (right !== ']' ||
+        if (rightParen !== ']' ||
             !MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(lang))
             return math;
         break;
     case ']':
-        if (right !== '[' ||
+        if (rightParen !== '[' ||
             !MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(lang))
             return math;
         break;
     case '(':
-        if (right !== ')')
+        if (rightParen !== ')')
             return math;
         break;
     default:
         return math;
     }
 
-    const replace = `${left}$1${sep}$3${right}`;
+    // $1 and $4 refer to the optional \left and \right LaTeX commands
+    const replace = `$1${leftParen}$2${sep}$4$5${rightParen}`;
 
     return math.replace(coordsOrOpenIntervalUS, replace);
 }

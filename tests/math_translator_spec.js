@@ -496,24 +496,57 @@ describe('MathTranslator (maybeTranslateMath)', function() {
     it('should support coordinates with brackets', function() {
         const locale = 'cs';
         assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
 
         let englishStr = '(a, b) (2,1)';
-        let translatedStr = '[a,b] [2,1]';
-        // In this case we now the string contains coordinates,
+        let translatedStr = '[a;b] [2;1]';
+        // In this case we know the string contains coordinates,
         // so we don't need a template
+        // Also, the default separator for langs with decimal comma
+        // is semicolon so that's translated automatically as well
         let output = maybeTranslateMath(englishStr, null, locale);
+        assert.equal(output, translatedStr);
 
         // When we have a template, we should extract the separator
-        let template = '[a;b]';
-        translatedStr = '[a;b] [2;1]';
+        let template = '[a,b]';
+        translatedStr = '[a,b] [2,1]';
         output = maybeTranslateMath(englishStr, template, locale);
         assert.equal(output, translatedStr);
 
         // Here we do not know whether it's an interval or a coordinate
         // so we need to have the template
-        englishStr = '(a, b) (2,1)';
+        englishStr = '(a, b) (1,2)';
         template = '[1; 2]';
-        translatedStr = '[a; b] [2; 1]';
+        translatedStr = '[a; b] [1; 2]';
+        output = maybeTranslateMath(englishStr, template, locale);
+        assert.equal(output, translatedStr);
+    });
+
+    it('should support coordinates with left/right parens', function() {
+        const locale = 'cs';
+        assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
+
+        let englishStr = '\\left(a, b\\right) (2,1)';
+        let translatedStr = '\\left[a;b\\right] [2;1]';
+        // In this case we know the string contains coordinates,
+        // so we don't need a template
+        // Also, the default separator for langs with decimal comma
+        // is semicolon so that's translated automatically as well
+        let output = maybeTranslateMath(englishStr, null, locale);
+        assert.equal(output, translatedStr);
+
+        // When we have a template, we should extract the separator
+        let template = '\\left[a,b\\right]';
+        translatedStr = '\\left[a,b\\right] [2,1]';
+        output = maybeTranslateMath(englishStr, template, locale);
+        assert.equal(output, translatedStr);
+
+        // Here we do not know whether it's an interval or a coordinate
+        // so we need to have the template
+        englishStr = '\\left(a,b\\right) (1,2)';
+        template = '\\left[1;2\\right]';
+        translatedStr = '\\left[a;b\\right] [1;2]';
         output = maybeTranslateMath(englishStr, template, locale);
         assert.equal(output, translatedStr);
     });
@@ -568,6 +601,18 @@ describe('MathTranslator (maybeTranslateMath)', function() {
         const englishStr = '[a,b] (c, d] (1,2)';
         const template = null;
         const translatedStr = '[a;b] ]c;d] ]1;2[';
+        const output = maybeTranslateMath(englishStr, template, locale);
+        assert.equal(output, translatedStr);
+    });
+
+    it('should support closed intervals with \\left\\right parens', function() {
+        const locale = 'fr';
+        assert(MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(locale));
+        assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
+
+        const englishStr = '\\left[a,b\\right] (c, d] \\left(1,2\\right)';
+        const template = null;
+        const translatedStr = '\\left[a;b\\right] ]c;d] \\left]1;2\\right[';
         const output = maybeTranslateMath(englishStr, template, locale);
         assert.equal(output, translatedStr);
     });
@@ -627,6 +672,17 @@ describe('detectClosedIntervals', function() {
         assert(detectClosedInterval(englishMath));
     });
 
+    it('should detect coordinates with left/right parens', function() {
+        let englishMath = '\\left[2,4\\right]';
+        assert(detectClosedInterval(englishMath));
+
+        englishMath = '\\left[12, 200\\right)';
+        assert(detectClosedInterval(englishMath));
+
+        englishMath = '\\left(2,4\\right]';
+        assert(detectClosedInterval(englishMath));
+    });
+
     it('should detect closed intervals with variables', function() {
         let englishMath = '[a,b]';
         assert(detectClosedInterval(englishMath));
@@ -648,11 +704,38 @@ describe('detectClosedIntervals', function() {
         englishMath = '[\\red{1.2}, b]';
         assert(detectClosedInterval(englishMath));
 
-        englishMath = '[\\blueD{1}.2 , a)';
+        englishMath = '[\\red{-1.2}, 3b]';
+        assert(detectClosedInterval(englishMath));
+
+        englishMath = '[-\\blueD{1}.2 , 1.1a)';
         assert(detectClosedInterval(englishMath));
 
         englishMath = '[1, \\red{1}.\\overline{2}]';
         assert(detectClosedInterval(englishMath));
+    });
+
+    it('should detect intervals with \\pi', function() {
+        let englishMath = '(\\pi,b]';
+        assert(detectClosedInterval(englishMath));
+
+        englishMath = '[-5\\pi,10\\pi]';
+        assert(detectClosedInterval(englishMath));
+
+        englishMath = '[1,1.2\\pi]';
+        assert(detectClosedInterval(englishMath));
+    });
+
+    it('should detect intervals with \\dfrac', function() {
+        let englishMath = '\\left[\\dfrac{\\pi}{2},2\\right]';
+        assert(detectClosedInterval(englishMath));
+
+        englishMath = '\\left(\\frac{3}{4}\\pi,5\\right]';
+        assert(detectClosedInterval(englishMath));
+
+        // Sanity check, should not allow empty parameter
+        // (even though it's a valid LaTeX
+        englishMath = '(\\frac{}{4},5]';
+        assert(!detectClosedInterval(englishMath));
     });
 
     it('should detect half closed intervals', function() {
@@ -670,10 +753,18 @@ describe('detectCoordinates', function() {
         let englishMath = '(4, 2.2)';
         assert(detectCoordinates(englishMath));
 
+        englishMath = '(4, -2.2)';
+        assert(detectCoordinates(englishMath));
+
         englishMath = '(2, 3) (4,2)';
         assert(detectCoordinates(englishMath));
 
         englishMath = '(0,0)';
+        assert(detectCoordinates(englishMath));
+    });
+
+    it('should detect coordinates with left/right parens', function() {
+        const englishMath = '\\left(4, 2.2\\right)';
         assert(detectCoordinates(englishMath));
     });
 
