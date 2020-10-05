@@ -38,11 +38,23 @@ describe('MathTranslator (translateMath)', function() {
     });
 
     it('should translate thousand separator for none', function() {
+        const locale = 'ko';
+        assert(MATH_RULES_LOCALES.NO_THOUSAND_SEP.includes(locale));
+
         const englishStr = '1{,}000{,}000 + 9{,}000';
         const translatedStr = '1000000 + 9000';
 
-        const outputStr = translateMath(englishStr, '', 'ko');
+        const outputStr = translateMath(englishStr, '', locale);
         assert.equal(outputStr, translatedStr);
+    });
+
+    it('should translate hindi numbers', function() {
+        const locale = 'hi';
+        const englishStr = '100.1001 1000 1{,}000 10{,}000 90{,}000{,}000.1';
+        const translaStr = '100.1001 1000 1{,}000 10{,}000 9{,}00{,}00{,}000.1';
+
+        const outputStr = translateMath(englishStr, '', locale);
+        assert.equal(outputStr, translaStr);
     });
 
     it('should not translate thousand separator for en locale', function() {
@@ -52,8 +64,8 @@ describe('MathTranslator (translateMath)', function() {
     });
 
     it('should translate decimal point to decimal comma', function() {
-        const englishStr = '1000.000 + 9.4 + 45.0';
-        const translatedStr = '1000{,}000 + 9{,}4 + 45{,}0';
+        const englishStr = '900.4 + 45.0';
+        const translatedStr = '900{,}4 + 45{,}0';
 
         MATH_RULES_LOCALES.DECIMAL_COMMA.forEach(function(locale) {
             const outputStr = translateMath(englishStr, '', locale);
@@ -837,17 +849,17 @@ describe('MATH_RULES_LOCALES', function() {
         }
     });
 
-    it('should not have conflicting rules for multiplication', function() {
-        MATH_RULES_LOCALES.CDOT_AS_TIMES.forEach(function(locale) {
-            assert(! MATH_RULES_LOCALES.TIMES_AS_CDOT.includes(locale));
+    it('should not have conflicting rules for thousand separators', function() {
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT.includes(locale));
         });
 
-        MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.forEach(function(locale) {
-            assert(! MATH_RULES_LOCALES.TIMES_AS_CDOT.includes(locale));
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_THIN_SPACE.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.NO_THOUSAND_SEP.includes(locale));
         });
 
-        MATH_RULES_LOCALES.MAYBE_CDOT_AS_TIMES.forEach(function(locale) {
-            assert(! MATH_RULES_LOCALES.CDOT_AS_TIMES.includes(locale));
+        MATH_RULES_LOCALES.THOUSAND_SEP_AS_DOT.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.NO_THOUSAND_SEP.includes(locale));
         });
     });
 
@@ -889,6 +901,12 @@ describe('MATH_RULES_LOCALES', function() {
     it('should not have conflicting rules for repeating decimals', function() {
         MATH_RULES_LOCALES.OVERLINE_AS_DOT.forEach(function(locale) {
             assert(! MATH_RULES_LOCALES.OVERLINE_AS_PARENS.includes(locale));
+        });
+    });
+
+    it('should not have conflicting rules for decimal commas', function() {
+        MATH_RULES_LOCALES.ARABIC_COMMA.forEach(function(locale) {
+            assert(! MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
         });
     });
 
