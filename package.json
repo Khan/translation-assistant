@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint src tests",
     "test": "mocha --require babel-core/register tests",
-    "test:coverage:codecov": "nyc mocha --report=lcovonly -- -R spec --require babel-core/register tests",
+    "test:coverage:codecov": "nyc mocha --report lcovonly -- -R spec --require babel-core/register tests",
     "test:coverage": "nyc mocha --report=text -- -R spec --require babel-core/register tests",
     "build:add": "git add lib/",
     "build": "babel --loose all src --out-dir lib",
