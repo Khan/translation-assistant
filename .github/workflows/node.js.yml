@@ -24,7 +24,12 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+# TODO: Cache the npm install step!
     - run: npm install
     - run: npm run lint
     - run: npm run build
-    - run: npm run test
+    - run: npm run test:coverage:codecov
+    - name: Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        directory: ./nyc-report/

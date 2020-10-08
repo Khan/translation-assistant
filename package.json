@@ -5,10 +5,12 @@
   "main": "lib/translation-assistant.js",
   "scripts": {
     "lint": "eslint src tests",
-    "test": "mocha --compilers js:babel/register tests",
+    "test": "mocha --require babel-core/register tests",
+    "test:coverage:codecov": "nyc mocha --report=lcovonly -- -R spec --require babel-core/register tests",
+    "test:coverage": "nyc mocha --report=text -- -R spec --require babel-core/register tests",
     "build:add": "git add lib/",
     "build": "babel --loose all src --out-dir lib",
-    "watch_test": "mocha --watch --compilers js:babel/register tests",
+    "watch_test": "mocha --watch --watch-extensions js --require babel-core/register tests",
     "watch_build": "babel --loose all --watch src --out-dir lib"
   },
   "repository": {
@@ -24,9 +26,9 @@
   "devDependencies": {
     "babel": "^5.8.23",
     "babel-core": "^5.8.25",
-    "eslint": "^7.7.0",
-    "expect.js": "^0.3.1",
-    "mocha": "^2.3.3",
+    "eslint": "^7.10.0",
+    "mocha": "^8.1.3",
+    "nyc": "^15.1.0",
     "pre-commit": "^1.2.2"
   },
   "pre-commit": [
