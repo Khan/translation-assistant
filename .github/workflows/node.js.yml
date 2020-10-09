@@ -32,4 +32,4 @@ jobs:
     - name: Codecov
       uses: codecov/codecov-action@v1
       with:
-        directory: ./nyc_output/
+        directory: coverage
