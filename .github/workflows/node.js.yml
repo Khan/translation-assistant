@@ -33,7 +33,7 @@ jobs:
         path: ~/.npm
         key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
 
-    - run: npm ci
+    - run: ls ~/.npm; npm ci
     - run: npm run lint
     - run: npm run build
     - run: npm run test:coverage:codecov
