@@ -559,17 +559,31 @@ describe('MathTranslator (maybeTranslateMath)', function() {
         assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale));
         assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
 
-        const englishStr = '(a, b) (2,4)';
         const template = '[1;2{,}5]';
+
+        const englishStr = '(a, b) (2,4)';
         const translatedStr = '[a;b] [2;4]';
         const output = maybeTranslateMath(englishStr, template, locale);
         assert.equal(output, translatedStr);
 
+        const template2 = '[1;2{,}5]';
         const englishStr2 = '(a, b) (\\blueD{-8} , \\goldD{6})';
         const translatedStr2 = '[a;b] [\\blueD{-8};\\goldD{6}]';
-        const output2 = maybeTranslateMath(englishStr2, template, locale);
+        const output2 = maybeTranslateMath(englishStr2, template2, locale);
         assert.equal(output2, translatedStr2);
 
+        const locale3 = 'ps';
+        assert(MATH_RULES_LOCALES.ARABIC_COMMA.includes(locale3));
+        assert(!MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale3));
+
+        // TODO: Move this tests to assistant_spec.js
+        // to tests this behaviour end to end
+        // Decimal number with arabic decimal comma
+        const template3 = '(1;2{،}5)';
+        const englishStr3 = '(a, b) (2,4.2)';
+        const translatedStr3 = '(a;b) (2;4.2)';
+        const output3 = maybeTranslateMath(englishStr3, template3, locale3);
+        assert.equal(output3, translatedStr3);
     });
 
     it('should only support coord/interval notation specific for given lang',
