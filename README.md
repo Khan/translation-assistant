@@ -15,3 +15,15 @@ or to do it automatically:
 ```sh
 git config blame.ignoreRevsFile .git-blame-ignore-revs
 ```
+
+## Tests and test coverage
+
+To run the tests:
+```sh
+npm run build && npm run test
+```
+
+To run the tests with test coverage, and report the results as text:
+```sh
+npm run build:coverage && npm run test:coverage
+```

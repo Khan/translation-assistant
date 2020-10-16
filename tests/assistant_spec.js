@@ -1164,10 +1164,28 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
+
+    // TODO(danielhollas): Make this test work. :-)
+    // We need to generalize our regexes to support perso-arabic numerals
+    it.skip('should handle perso-arabic numerals in coordinates', function() {
+        const lang = 'ps';
+        assert(MATH_RULES_LOCALES.ARABIC_COMMA.includes(lang));
+
+        const allItems = [
+            {englishStr: 'Coordinates $(0,3.\\overline{3}) (\\blueD{-1},0)$',
+                translatedStr: 'Cords $(۰;۳{،}\\overline{۳}) (\\blueD{-۱};۰)$'},
+        ];
+        const itemsToTranslate = [
+            {englishStr: 'Coordinates $(0,3.1)$',
+                translatedStr: ''},
+        ];
+        const translatedStrs = ['Cords $(۰;۳{،}۱)$'];
+
+        assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
+    });
 });
 
 describe('TranslationAssistant (graphie)', function() {
-    // NOTE(danielhollas): This test is flaky, not sure why
     it('should handle multiple graphies on multiple lines', function() {
         const allItems = [{
             englishStr: `simplify ${graphies[0]}, answer ${graphies[1]}\n\n` +
@@ -1383,6 +1401,43 @@ describe('TranslationAssistant (widgets)', function() {
         assertSuggestions(allItems, itemsToTranslate, [
             'answerz [[☃ Expression 2]], simplifyz [[☃ Expression 1]]',
         ]);
+    });
+
+    // TODO(danielhollas): Make this test work (i.e. fail)
+    // Currently, a wrong suggestion is offered if the original
+    // translation wrongly changes the widgets
+    // I think we need to check the widget mapping from `getMapping`
+    // in a similar way we check mapping for MATH_REGEX
+    it.skip('should throw if widget mapping differs', function() {
+        const allItems = [{
+            englishStr:
+                'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
+            translatedStr:
+                'answerz [[☃ Expression 1]], simplifyz [[☃ Expression 1]]',
+        }];
+        const itemsToTranslate = [{
+            englishStr:
+                'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [null]);
+    });
+
+    it('should throw if widgets don\'t match', function() {
+        const allItems = [{
+            englishStr:
+                'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
+            translatedStr:
+                'answerz [[☃ Expression 1]], simplifyz [[☃ Ex 2]]',
+        }];
+        const itemsToTranslate = [{
+            englishStr:
+                'simplify [[☃ Expression 1]], answer [[☃ Expression 2]]',
+            translatedStr: '',
+        }];
+
+        assertSuggestions(allItems, itemsToTranslate, [null]);
     });
 
     it('should handle strings that are only widgets', function() {

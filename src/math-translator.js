@@ -444,6 +444,11 @@ function getDecNumberRegexString(lang, capture = true) {
     // were defined at some point
     const katexColorMacros = KATEX_BASE_COLORS.join('|');
 
+    // TODO: Generalize this to other numeral systems, such as perso-arabic
+    // i.e. in regexes instead of [0-9] we need [[۱۲۳۴۵۶۷۸۹۰]
+    // We need a helper function to return a number regex, similarly to
+    // getEscapedDecimalSeparator()
+
     const integerPart =
         `-?[0-9]+|-?\\\\(?:${katexColorMacros})[A-Z]?\\{-?[0-9]+\\}`;
     // Decimal part is different from integer part
