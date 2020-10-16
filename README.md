@@ -1,6 +1,7 @@
 # Translation Assistant
 
 [![CI](https://github.com/Khan/translation-assistant/workflows/Node.js%20CI/badge.svg?branch=master&event=push)](https://github.com/Khan/translation-assistant/actions?query=workflow%3A%22Node.js+CI%22)
+[![codecov](https://codecov.io/gh/Khan/translation-assistant/branch/master/graph/badge.svg)](https://codecov.io/gh/Khan/translation-assistant)
 
 Provides functions that analyze and suggest translations for similar strings
 based on an existing translation. Powers the Smart Translations feature in Khan
