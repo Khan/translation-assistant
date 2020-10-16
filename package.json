@@ -10,6 +10,7 @@
     "test:coverage": "nyc --reporter=html --reporter=text mocha --require @babel/register tests",
     "build:add": "git add lib/",
     "build": "babel src --out-dir lib",
+    "build:coverage": "babel src --out-dir lib --plugins=istanbul",
     "watch_test": "mocha --watch --watch-extensions js --require @babel/register tests",
     "watch_build": "babel --watch src --out-dir lib"
   },
@@ -28,6 +29,8 @@
     "@babel/core": "^7.4",
     "@babel/preset-env": "^7.4",
     "@babel/register": "^7.4",
+    "@istanbuljs/nyc-config-babel": "^3.0.0",
+    "babel-plugin-istanbul": "^6.0.0",
     "core-js": "^3.0.1",
     "eslint": "^7.10.0",
     "mocha": "^8.1.3",
