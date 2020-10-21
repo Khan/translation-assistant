@@ -7,6 +7,8 @@ Provides functions that analyze and suggest translations for similar strings
 based on an existing translation. Powers the Smart Translations feature in Khan
 Translation Editor.
 
+## For devs
+
 To ignore eslint style-guide commits in blame history, use:
 ```sh
 git blame --ignore-revs-file .git-blame-ignore-revs
@@ -17,7 +19,7 @@ or to do it automatically:
 git config blame.ignoreRevsFile .git-blame-ignore-revs
 ```
 
-## Tests and test coverage
+### Tests and test coverage
 
 To run the tests:
 ```sh
