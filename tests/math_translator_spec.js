@@ -559,17 +559,18 @@ describe('MathTranslator (maybeTranslateMath)', function() {
         assert(MATH_RULES_LOCALES.COORDS_AS_BRACKETS.includes(locale));
         assert(MATH_RULES_LOCALES.DECIMAL_COMMA.includes(locale));
 
-        const englishStr = '(a, b) (2,4)';
         const template = '[1;2{,}5]';
+
+        const englishStr = '(a, b) (2,4)';
         const translatedStr = '[a;b] [2;4]';
         const output = maybeTranslateMath(englishStr, template, locale);
         assert.equal(output, translatedStr);
 
+        const template2 = '[1;2{,}5]';
         const englishStr2 = '(a, b) (\\blueD{-8} , \\goldD{6})';
         const translatedStr2 = '[a;b] [\\blueD{-8};\\goldD{6}]';
-        const output2 = maybeTranslateMath(englishStr2, template, locale);
+        const output2 = maybeTranslateMath(englishStr2, template2, locale);
         assert.equal(output2, translatedStr2);
-
     });
 
     it('should only support coord/interval notation specific for given lang',
@@ -586,6 +587,18 @@ describe('MathTranslator (maybeTranslateMath)', function() {
             locale = 'cs';
             assert(!MATH_RULES_LOCALES.OPEN_INT_AS_BRACKETS.includes(locale));
             template = ']1,2[';
+            output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
+
+            template = '(1;2]';
+            output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
+
+            template = ')1;2)';
+            output = maybeTranslateMath(englishStr, template, locale);
+            assert.equal(output, translatedStr);
+
+            template = '[1;2)';
             output = maybeTranslateMath(englishStr, template, locale);
             assert.equal(output, translatedStr);
 
