@@ -748,6 +748,9 @@ describe('detectClosedIntervals', function() {
         englishMath = '\\left(\\frac{3}{4}\\pi,5\\right]';
         assert(detectClosedInterval(englishMath));
 
+        englishMath = '\\left(\\frac{3\\pi}{2},5\\right]';
+        assert(detectClosedInterval(englishMath));
+
         // Sanity check, should not allow empty parameter
         // (even though it's a valid LaTeX
         englishMath = '(\\frac{}{4},5]';
@@ -758,7 +761,7 @@ describe('detectClosedIntervals', function() {
         let englishMath = '(a,b]';
         assert(detectClosedInterval(englishMath));
 
-        englishMath = '[a,2)';
+        englishMath = '[-a,2)';
         assert(detectClosedInterval(englishMath));
     });
 });

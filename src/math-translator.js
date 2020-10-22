@@ -417,6 +417,20 @@ const KATEX_BASE_COLORS = ['blue', 'gold', 'gray', 'mint', 'green', 'red',
     'maroon', 'orange', 'pink', 'purple', 'teal', 'kaBlue', 'kaGreen'];
 
 /**
+ * Return regex string matching numerals for a given languages
+ *
+ * @param {string} lang The KA locale
+ * @returns {string} String to be passed into RegExp constructor.
+ */
+function getDigitsRegexString(lang) {
+    if (MATH_RULES_LOCALES.PERSO_ARABIC_NUMERALS.includes(lang)) {
+        return '[۱۲۳۴۵۶۷۸۹۰]';
+    } else {
+        return '[0-9]';
+    }
+}
+
+/**
  * Construct regular expression to match decimal numbers for a given lang,
  * possibly wrapped in TeX commands.
  *
@@ -444,24 +458,22 @@ function getDecNumberRegexString(lang, capture = true) {
     // were defined at some point
     const katexColorMacros = KATEX_BASE_COLORS.join('|');
 
-    // TODO: Generalize this to other numeral systems, such as perso-arabic
-    // i.e. in regexes instead of [0-9] we need [[۱۲۳۴۵۶۷۸۹۰]
-    // We need a helper function to return a number regex, similarly to
-    // getEscapedDecimalSeparator()
+    // returns '[0-9]' for most languages
+    const dig = getDigitsRegexString(lang);
 
     const integerPart =
-        `-?[0-9]+|-?\\\\(?:${katexColorMacros})[A-Z]?\\{-?[0-9]+\\}`;
+        `-?${dig}+|-?\\\\(?:${katexColorMacros})[A-Z]?\\{-?${dig}+\\}`;
     // Decimal part is different from integer part
     // because it can contain \\overline
     // TODO: Some langs do not use \\overline, but \\dot
     const decPart =
-       `[0-9]+|\\\\(?:overline|${katexColorMacros})[A-Z]?\\{[0-9]+\\}`;
+       `${dig}+|\\\\(?:overline|${katexColorMacros})[A-Z]?\\{${dig}+\\}`;
 
     const sep = getEscapedDecimalSeparator(lang);
 
     // This part matches strings like `\\green{1.2}`
     const wrappedDecimal =
-        `\\\\(?:${katexColorMacros})[A-Z]?\\{-?[0-9]+${sep}[0-9]+\\}`;
+        `\\\\(?:${katexColorMacros})[A-Z]?\\{-?${dig}+${sep}${dig}+\\}`;
 
     // Wrapped decimal is not needed if we capture integer and decimal part
     // because in that case we do not care that the decimal number
@@ -506,16 +518,20 @@ function getEscapedDecimalSeparator(lang) {
  */
 function getOrderedPairRegexString(lang) {
     const katexColorMacros = `\\\\(?:${KATEX_BASE_COLORS.join('|')})[A-Z]?`;
+    const dig = getDigitsRegexString(lang);
     // Assuming single-letter variables (or \pi) and numbers below 1000
     // (without thousand separator) or combinations, such as '2\\pi' or '2.1b'
     const integer =
-      `-?[0-9]+|-?${katexColorMacros}\\{-?[0-9]+\\}|-?${katexColorMacros}[0-9]`;
-    const variable = `\\\\pi|[a-z]|${katexColorMacros}\\{[a-z]\\}`;
+        `-?(?:${dig}+|` +
+        `${katexColorMacros}\\{-?${dig}+\\}|` +
+        `${katexColorMacros}${dig})`;
+    const variable = `-?(?:\\\\pi|[a-z]|${katexColorMacros}\\{[a-z]\\})`;
     const decimal = getDecNumberRegexString(lang,
         /* don't include capture groups */ false);
 
-    const fracArgument = `(?:${variable}|${integer})`;
-    // Match '\\frac{1}{2}'
+    // Match 'a', '2' or '2a'
+    const fracArgument = `(?:${variable}|(?:${integer})(?:${variable})?)`;
+    // Match '\\frac{1}{2}' or `\\frac{3\\pi}{2}
     let frac = `-?\\\\d?frac\\{${fracArgument}\\}\\{${fracArgument}\\}`;
     // Match '\frac{3}{4}\\pi'
     frac = `${frac}${fracArgument}?`;
