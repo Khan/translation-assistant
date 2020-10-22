@@ -1165,9 +1165,7 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
 
-    // TODO(danielhollas): Make this test work. :-)
-    // We need to generalize our regexes to support perso-arabic numerals
-    it.skip('should handle perso-arabic numerals in coordinates', function() {
+    it('should handle perso-arabic numerals in coordinates', function() {
         const lang = 'ps';
         assert(MATH_RULES_LOCALES.ARABIC_COMMA.includes(lang));
 
