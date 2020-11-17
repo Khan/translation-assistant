@@ -999,11 +999,10 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
      * the code in `getSuggestionGroups()` creates the template from the first
      * translatedStr and skips the rest.
      */
-    /*
-    it('should translate math-only strings from multiple templates',
-        function() {
-        // Lang 'id' is in both MAYBE_TIMES_AS_CDOT and MAYBE_DIV_AS_COLON
+    it.skip('should handle notation from from multiple templates', function() {
         const lang = 'id';
+        assert(MATH_RULES_LOCALES.MAYBE_TIMES_AS_CDOT.includes(lang));
+        assert(MATH_RULES_LOCALES.MAYBE_DIV_AS_COLON.includes(lang));
         const allItems = [
             {englishStr: '$6 \\div y$', translatedStr: '$6 \\mathbin{:} y$'},
             {englishStr: '$3 \\times x$', translatedStr: '$3 \\cdot x$'},
@@ -1016,7 +1015,6 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
-    */
 
     it('should translate closed intervals in math-only strings', function() {
         const lang = 'fr';
@@ -1165,9 +1163,13 @@ describe('TranslationAssistant (maybe-math-translate)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs, lang);
     });
 
+    // NOTE(danielhollas): Pashto team will use the western digits for now,
+    // see comment in scr/math_translator.js. Hence, we use 'fake-lang'
+    // to keep our test coverage.
     it('should handle perso-arabic numerals in coordinates', function() {
-        const lang = 'ps';
+        const lang = 'fake-lang';
         assert(MATH_RULES_LOCALES.ARABIC_COMMA.includes(lang));
+        assert(MATH_RULES_LOCALES.PERSO_ARABIC_NUMERALS.includes(lang));
 
         const allItems = [
             {englishStr: 'Coordinates $(0,3.\\overline{3}) (\\blueD{-1},0)$',
