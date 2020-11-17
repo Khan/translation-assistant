@@ -163,13 +163,16 @@ describe('MathTranslator (translateMath)', function() {
         });
     });
 
-    it('should use arabic decimal comma and no thousand separator for pashto',
-        function() {
-            const englishStr = '1{,}234{,}567.890';
-            const translatedStr = '۱۲۳۴۵۶۷{،}۸۹۰';
-            const outputStr = translateMath(englishStr, '', 'ps');
+    // Pashto is in fact using western-style digits for now,
+    // see comment in math_translator.js
+    it('should handle arabic comma', function() {
+        const englishStr = '567.890';
+        const translatedStr = '۵۶۷{،}۸۹۰';
+        MATH_RULES_LOCALES.ARABIC_COMMA.forEach(function(locale) {
+            const outputStr = translateMath(englishStr, '', locale);
             assert.equal(outputStr, translatedStr);
         });
+    });
 
     it('should translate repeating decimal numbers', function() {
         // We cannot iterate over all locales from DECIMAL_COMMA
