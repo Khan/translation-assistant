@@ -11,12 +11,14 @@
 const MATH_RULES_LOCALES = {
     // Number formats
     THOUSAND_SEP_AS_THIN_SPACE: ['az', 'bg', 'cs', 'de', 'fr', 'hu', 'it', 'ka',
-        'km', 'ky', 'lv', 'nb', 'nl', 'pl', 'pt-pt', 'ro', 'sv', 'uk'],
-    THOUSAND_SEP_AS_DOT: ['da', 'el', 'id', 'pt', 'sr', 'tr', 'vi'],
-    NO_THOUSAND_SEP: ['hy', 'kk', 'ko'],
+        'km', 'ky', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt-pt', 'ro', 'sq', 'sv',
+        'uk'],
+    THOUSAND_SEP_AS_DOT: ['da', 'el', 'id', 'is', 'mk', 'pt', 'rw', 'sl', 'sr',
+        'tr', 'vi'],
+    NO_THOUSAND_SEP: ['hy', 'kk', 'ko', 'ru', 'zh-hans'],
     DECIMAL_COMMA: ['az', 'bg', 'cs', 'da', 'de', 'el', 'fr', 'hu', 'hy', 'id',
-        'it', 'ka', 'kk', 'ky', 'lv', 'nb', 'nl', 'pl', 'pt', 'pt-pt', 'ro',
-        'ru', 'sr', 'sv', 'tr', 'vi'],
+        'is', 'it', 'ka', 'kk', 'ky', 'lt', 'lv', 'mk', 'nb', 'nl', 'pl', 'pt',
+        'pt-pt', 'ro', 'ru', 'rw', 'sl', 'sq', 'sr', 'sv', 'tr', 'vi'],
     // Pashto team would like to use both perso-arabic numerals for Early Math
     // and western digits for more advanced math courses.
     // Unfortunately, we don't support this at the moment,
@@ -32,10 +34,10 @@ const MATH_RULES_LOCALES = {
     // Notations for repeating decimals
     // 1 / 3 = 0.\overline{3} -> 0.\dot{3}
     // 1 / 7 = 0.\overline{142857} -> 0.\dot{1}4285\dot{7}
-    OVERLINE_AS_DOT: ['bn', 'hu', 'ja'],
+    OVERLINE_AS_DOT: ['bn', 'hu', 'ja', 'ko', 'my'],
     // 1 / 3 = 0.\overline{3} -> 0.(3)
     // 1 / 7 = 0.\overline{142857} -> 0.(142857)
-    OVERLINE_AS_PARENS: ['az', 'bg', 'hy', 'ka', 'kk', 'ky', 'lv', 'pl',
+    OVERLINE_AS_PARENS: ['az', 'bg', 'hy', 'ka', 'kk', 'ky', 'lt', 'lv', 'pl',
         'pt-pt', 'ro', 'ru', 'vi'],
 
     // Intervals and cartesian coordinates
@@ -51,20 +53,21 @@ const MATH_RULES_LOCALES = {
     // Binary operators
     // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
     // when \mathbin{.} becomes available for them (currently blocked by linter)
-    TIMES_AS_CDOT: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'lv', 'nb', 'pl',
-        'ro', 'sr', 'sv' ],
+    TIMES_AS_CDOT: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'lt', 'lv', 'nb',
+        'pl', 'ro', 'sr', 'sv' ],
     CDOT_AS_TIMES: [ 'fr', 'ps', 'pt-pt'],
-    DIV_AS_COLON: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'it', 'ky', 'lv',
-        'nb', 'pl', 'pt-pt', 'ro', 'ru', 'sv', 'uk'],
+    DIV_AS_COLON: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'it', 'ky', 'lt',
+        'lv', 'nb', 'pl', 'pt-pt', 'ro', 'ru', 'sv', 'uk'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
-    TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'kk', 'km', 'ky', 'lv', 'pl',
-        'pt', 'pt-pt', 'ro', 'ru'],
+    TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'kk', 'km', 'ky', 'lt', 'lv',
+        'pl', 'pt', 'pt-pt', 'ro', 'ru'],
     COT_AS_COTG: ['cs', 'pt', 'pt-pt'],
-    COT_AS_CTG: ['az', 'bg', 'hu', 'hy', 'kk', 'km', 'ky', 'lv', 'pl', 'ro',
-        'ru'],
-    CSC_AS_COSEC: ['as', 'az', 'bg', 'bn', 'cs', 'gu', 'hi', 'kn', 'ky', 'lv',
-        'mr', 'my', 'pa', 'pl', 'ro', 'ru', 'sv', 'ta', 'te'],
+    COT_AS_CTG: ['az', 'bg', 'hu', 'hy', 'kk', 'km', 'ky', 'lt', 'lv', 'pl',
+        'ro', 'ru'],
+    CSC_AS_COSEC: ['as', 'az', 'bg', 'bn', 'cs', 'gu', 'hi', 'id', 'ja', 'kn',
+        'ky', 'lt', 'lv', 'mr', 'my', 'pa', 'pl', 'ro', 'ru', 'sv', 'ta', 'te',
+        'tr', 'uk'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
     // Rules conditional on the translated template
     MAYBE_DIV_AS_COLON: ['id', 'lol'],
@@ -101,9 +104,16 @@ function translateMath(math, template, lang) {
     math = maybeTranslateMath(math, template, lang);
 
     math = translateMathOperators(math, lang);
+
     math = translateNumbers(math, lang);
     // This one needs to be last
     math = translateNumerals(math, lang);
+
+    // Special notation for numbers not handled above
+    if (lang === 'hi') {
+        math = translateHindiNumbers(math);
+    }
+
     return math;
 }
 
@@ -212,6 +222,42 @@ function translateNumbers(math, lang) {
 
     return math;
 }
+
+/**
+ * Translate US numbers to Hindi.
+ *
+ * Hindi uses decimal point, so here we only translate
+ * thousand separators, which are a bit peculiar in Hindi.
+ *
+ * 100{,}000{,}000 -> 10{,}00{,}00{,}000
+ *
+ * @param {string} math A math expression to translate
+ * @param {string} lang The KA locale of the translation language.
+ * @returns {string} The translated math expression.
+ */
+function translateHindiNumbers(math) {
+    const USNumber = /([0-9]+(?:\{,\}[0-9]{3})+)/g;
+    return math.replace(USNumber, function(number) {
+        // Remove US thousand separators
+        number = number.replace(/\{,\}/g, '');
+        if (number.length < 4) {
+            return number;
+        }
+
+        // Start with last three digits
+        let translatedNumber = number.slice(-3);
+        let i = 4;
+        while (i <= number.length) {
+            if (i % 2 === 0) {
+                translatedNumber = `{,}${translatedNumber}`;
+            }
+            translatedNumber = number.slice(-i, -i + 1) + translatedNumber;
+            i++;
+        }
+        return translatedNumber;
+    });
+}
+
 
 /**
  * Handles translations of LaTeX commands (\func{}) and other math notation
