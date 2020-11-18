@@ -1,22 +1,23 @@
+codecov:
+  require_ci_to_pass: yes
+
 coverage:
   precision: 2
   round: down
-  range: "70...100"
+  range: "95...100"
 
   status:
     project:
+      target: auto
       default: on
     patch:
-      default: off
-    changes:
-      default: off
+      target: auto
+      default: on
 
 comment:
-  layout: "header, reach, diff, flags, files, footer"
+  layout: "header,diff,files,footer"
   behavior: default
   require_changes: no
-  require_base: no
-  require_head: yes
 
 ignore:
   - "tests/*.js"
