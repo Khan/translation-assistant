@@ -6,7 +6,7 @@
 /**
  * Locale lists for different math notations, taken from this table:
  * https://docs.google.com/spreadsheets/d/1qgi-KjumcZ6yru19U5weqZK9TosRlTdLZqbXbABBJoQ/edit#gid=0
- * TODO(danielhollas): Need to update this when new langs join translations
+ * TODO(danielhollas): Need to update this when new langs join translations.
  */
 const MATH_RULES_LOCALES = {
     // Number formats
@@ -240,11 +240,9 @@ function translateHindiNumbers(math) {
     return math.replace(USNumber, function(number) {
         // Remove US thousand separators
         number = number.replace(/\{,\}/g, '');
-        if (number.length < 4) {
-            return number;
-        }
 
-        // Start with last three digits
+        // Start with last three digits.
+        // We're guaranteed they exist by the USNumber regex above
         let translatedNumber = number.slice(-3);
         let i = 4;
         while (i <= number.length) {
