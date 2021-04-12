@@ -80,8 +80,6 @@ const MATH_RULES_LOCALES = {
     ANGLE_AS_HAT: ['it', 'pt', 'tr', 'vi'],
     // \angle ABC -> ABC\angle
     ANGLE_SWITCHED: ['hy'],
-    // m\angle ABC -> ABC\angle
-    ANGLE_MEASURE_SWITCHED: ['hy'],
     // m\angle ABC -> |\angle ABC|
     ANGLE_MEASURE_AS_VBAR: ['cs'],
     // m\angle ABC -> \angle A\hat{B}C
@@ -336,50 +334,40 @@ function translateMathOperators(math, lang) {
             regex: /\\(arc)?csc/g, replace: '\\operatorname{$1cossec}'},
 
         // Let's deal with angle measures first!
+
+        // m\\angle ABC -> |ABC|
         {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_VBAR,
-            // Cannot use lookbehind (ES2018 feature), so it's a bit awkward
-            // we try to match ' m \\angle ABC' or 'm \\angle x'
-            // Also: https://crowdin.com/translate/khanacademy/26316/enus-cs#5300605
-            regex:
-            /(^|[^a-zA-Z])m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
-            replace: '$1|\\angle $2|'},
+            regex: /m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            replace: '|\\angle $1|'},
 
         // m\\angle ABC -> A\hat{B}C
         {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_HAT,
-            regex:
-            /(^|[^a-zA-Z])m\s*\\angle\s+([A-Z])([A-Z])([A-Z])(?![a-zA-Z])/g,
-            replace: '$1$2\\hat{$3}$4'},
+            regex: /m\s*\\angle\s+([A-Z])([A-Z])([A-Z])(?![a-zA-Z])/g,
+            replace: '$1\\hat{$2}$3'},
 
         // m\\angle ABC -> m(A\hat{B}C)
         {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_MHAT,
-            regex:
-            /(^|[^a-zA-Z])m\s*\\angle\s+([A-Z])([A-Z])([A-Z])(?![a-zA-Z])/g,
-            replace: '$1m($2\\hat{$3}$4)'},
+            regex: /m\s*\\angle\s+([A-Z])([A-Z])([A-Z])(?![a-zA-Z])/g,
+            replace: 'm($1\\hat{$2}$3)'},
+
+        // NOTE(danielhollas): We just get rid of the 'm' prefix here,
+        // the actual conversion from angle to widehat is done in
+        // the ANGLE_AS_WIDEHAT rule.
+        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_WIDEHAT,
+            regex: /m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            replace: '\\angle $1'},
 
         // m\\angle ABC -> \\angle ABC
         {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_WITHOUT_M,
-            regex:
-            /(^|[^a-zA-Z])m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
-            replace: '$1\\angle $2'},
-
-        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_AS_WIDEHAT,
-            regex:
-            /(^|[^a-zA-Z])m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
-            replace: '$1\\angle $2'},
-
-        {langs: MATH_RULES_LOCALES.ANGLE_MEASURE_SWITCHED,
-            regex:
-            /(^|[^a-zA-Z])m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
-            replace: '$1 $2\\angle'},
-
+            regex: /m\s*\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            replace: '\\angle $1'},
 
         {langs: MATH_RULES_LOCALES.ANGLE_AS_WIDEHAT,
             regex: /\\angle\s+([A-Z]{3})(?![a-zA-Z])/g,
             replace: '\\widehat{$1}'},
 
         {langs: MATH_RULES_LOCALES.ANGLE_SWITCHED,
-            regex:
-            /\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
+            regex: /\\angle\s+([a-zA-Z]|[A-Z]{3})(?![a-zA-Z])/g,
             replace: '$1\\angle'},
 
         // \\angle BAC-> B\hat{A}C

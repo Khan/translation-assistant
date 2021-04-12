@@ -335,14 +335,6 @@ describe('MathTranslator (translateMath)', function() {
             const outputStr = translateMath(englishStr, '', locale);
             assert.equal(outputStr, translatedStr);
         });
-
-        // Should not match if testm as angle measure
-        const englishStr2 = 'testm \\angle ABC';
-        const translatedStr2 = 'testm \\angle ABC';
-        MATH_RULES_LOCALES.ANGLE_MEASURE_AS_VBAR.forEach(function(locale) {
-            const outputStr = translateMath(englishStr2, '', locale);
-            assert.equal(outputStr, translatedStr2);
-        });
     });
 });
 
