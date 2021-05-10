@@ -386,6 +386,24 @@ function rtrim(str) {
 }
 
 /**
+ * Count trailing newlines in a string.
+ *
+ * @param {string} str An input string.
+ * @returns {number} The string with no trailing whitespace.
+ */
+function countTrailingNewlines(str) {
+    let count = 0;
+    for (let i = str.length; i > 0; i--) {
+        if (str[i - 1] === '\n') {
+            count++;
+        } else {
+            break;
+        }
+    }
+    return count;
+}
+
+/**
  * Escape any string to create regular expression
  *
  * See: https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript/
@@ -437,6 +455,7 @@ function replaceTextInMath(englishMath, dict) {
  * @returns {string} The suggested translation.
  */
 function populateTemplate(template, englishStr, lang) {
+    const trailingNewlinesCount = countTrailingNewlines(englishStr);
     englishStr = rtrim(englishStr);
     const englishLines = englishStr.split(LINE_BREAK);
 
@@ -502,7 +521,7 @@ function populateTemplate(template, englishStr, lang) {
         .map((math) => translateMath(math, allTranslatedMaths, lang))
         .map((math) => replaceTextInMath(math, template.mathDictionary));
 
-    return englishLines.map((englishLine, index) => {
+    let suggestion = englishLines.map((englishLine, index) => {
         const templateLine = template.lines[index];
 
         return templateLine.replace(/__MATH__/g, () =>
@@ -515,6 +534,14 @@ function populateTemplate(template, englishStr, lang) {
             widgets[template.widgetMapping[widgetIndex++]]
         );
     }).join(LINE_BREAK);
+    // Crowdin blocks translations that are missing trailing newlines
+    // so we add them back.
+    if (trailingNewlinesCount > 0) {
+        for (let i = 0; i < trailingNewlinesCount; i++) {
+            suggestion += '\n';
+        }
+    }
+    return suggestion;
 }
 
 /**
@@ -581,6 +608,7 @@ class TranslationAssistant {
 
         return itemsToTranslate.map((item) => {
             const englishStr = rtrim(this.getEnglishStr(item));
+            const englishStrNonTrim = this.getEnglishStr(item);
             const normalStr = stringToGroupKey(englishStr);
             const normalObj = JSON.parse(normalStr);
 
@@ -607,7 +635,7 @@ class TranslationAssistant {
 
                 if (template) {
                     const translatedStr = populateTemplate(
-                        template, englishStr, lang);
+                        template, englishStrNonTrim, lang);
                     return [item, translatedStr];
                 }
             }

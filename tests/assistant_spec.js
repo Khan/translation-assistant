@@ -378,7 +378,10 @@ describe('TranslationAssistant (math)', function() {
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
 
-    it('should handle trailing newline in englishStr', function() {
+    it('should handle missing trailing newline in translatedStr', function() {
+        // NOTE(danielhollas): Crowdin started blocking translations with
+        // mismatching trailing newlines so this example should not happen
+        // in practice anymore.
         assertSuggestions([{
             englishStr:
                 'simplify $2x = 4$, answer $x = 2$\n\n',
@@ -386,29 +389,35 @@ describe('TranslationAssistant (math)', function() {
                 'simplifyz $2x = 4$, answerz $x = 2$',
         }], [{
             englishStr:
-                'simplify $3x = 9$, answer $x = 3$\n\n',
+                'simplify $3x = 9$, answer $x = 3$ \n\n',
             translatedStr: '',
         }], [
-            'simplifyz $3x = 9$, answerz $x = 3$',
+            'simplifyz $3x = 9$, answerz $x = 3$\n\n',
         ]);
     });
 
     it('should handle trailing newline in translatedStr', function() {
         const allItems = [{
             englishStr: 'simplify $2x = 4$, answer $x = 2$',
-            translatedStr:'simplifyz $2x = 4$, answerz $x = 2$\n\n',
+            translatedStr:'simplifyz $2x = 4$, answerz $x = 2$ \n ',
         }];
         const itemsToTranslate = [{
             englishStr: 'simplify $3x = 9$, answer $x = 3$',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $3x = 9$, answer $x = 3$\n\n',
             translatedStr: '',
         }];
         // We trim trailing newlines in the translated string inside
         // createTemplate and we do the same for the English string inside
         // populateTemplate in order to match the string & template when
-        // suggesting translations. That is why we have no trailing newlines
-        // in translatedStrs here, since the translated string created from the
-        // template will not have any trailing newlines.
-        const translatedStrs = ['simplifyz $3x = 9$, answerz $x = 3$'];
+        // suggesting translations. However, we always then post-process
+        // the suggested string to match the number of trailing newlines
+        // in the English string.
+        const translatedStrs = [
+            'simplifyz $3x = 9$, answerz $x = 3$',
+            'simplifyz $3x = 9$, answerz $x = 3$\n\n',
+        ];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
@@ -420,14 +429,19 @@ describe('TranslationAssistant (math)', function() {
         }];
         // We trim trailing newlines in order to match the English string to the
         // template for suggesting a translation.
+        // However, in suggested translation we always match the number
+        // of trailing newlines in the English string.
         const itemsToTranslate = [{
-            englishStr: 'simplify $3x = 9$, answer $x = 3$\n\n',
+            englishStr: 'simplify $3x = 9$, answer $x = 3$ \n\n',
+            translatedStr: '',
+        }, {
+            englishStr: 'simplify $3x = 9$, answer $x = 3$\n',
             translatedStr: '',
         }];
-        // That is why we have no trailing newlines in translatedStrs here,
-        // since the translated string created from the template will not have
-        // any trailing newlines.
-        const translatedStrs = ['simplifyz $3x = 9$, answerz $x = 3$'];
+        const translatedStrs = [
+            'simplifyz $3x = 9$, answerz $x = 3$\n\n',
+            'simplifyz $3x = 9$, answerz $x = 3$\n',
+        ];
 
         assertSuggestions(allItems, itemsToTranslate, translatedStrs);
     });
