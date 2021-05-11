@@ -12,13 +12,13 @@ const MATH_RULES_LOCALES = {
     // Number formats
     THOUSAND_SEP_AS_THIN_SPACE: ['az', 'bg', 'cs', 'de', 'fr', 'hu', 'it', 'ka',
         'km', 'ky', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt-pt', 'ro', 'sq', 'sv',
-        'uk'],
+        'uk', 'uz'],
     THOUSAND_SEP_AS_DOT: ['da', 'el', 'id', 'is', 'mk', 'pt', 'rw', 'sl', 'sr',
         'tr', 'vi'],
     NO_THOUSAND_SEP: ['hy', 'kk', 'ko', 'ru', 'zh-hans'],
     DECIMAL_COMMA: ['az', 'bg', 'cs', 'da', 'de', 'el', 'fr', 'hu', 'hy', 'id',
         'is', 'it', 'ka', 'kk', 'ky', 'lt', 'lv', 'mk', 'nb', 'nl', 'pl', 'pt',
-        'pt-pt', 'ro', 'ru', 'rw', 'sl', 'sq', 'sr', 'sv', 'tr', 'vi'],
+        'pt-pt', 'ro', 'ru', 'rw', 'sl', 'sq', 'sr', 'sv', 'tr', 'uz', 'vi'],
     // Pashto team would like to use both perso-arabic numerals for Early Math
     // and western digits for more advanced math courses.
     // Unfortunately, we don't support this at the moment,
@@ -38,7 +38,7 @@ const MATH_RULES_LOCALES = {
     // 1 / 3 = 0.\overline{3} -> 0.(3)
     // 1 / 7 = 0.\overline{142857} -> 0.(142857)
     OVERLINE_AS_PARENS: ['az', 'bg', 'hy', 'ka', 'kk', 'ky', 'lt', 'lv', 'pl',
-        'pt-pt', 'ro', 'ru', 'vi'],
+        'pt-pt', 'ro', 'ru', 'uz', 'vi'],
 
     // Intervals and cartesian coordinates
     // (a,b) - US open interval or coordinates
@@ -54,20 +54,20 @@ const MATH_RULES_LOCALES = {
     // TODO(danielhollas):remove 'bg' from TIMES_AS_CDOT
     // when \mathbin{.} becomes available for them (currently blocked by linter)
     TIMES_AS_CDOT: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'lt', 'lv', 'nb',
-        'pl', 'ro', 'sr', 'sv' ],
+        'pl', 'ro', 'sr', 'sv', 'uz'],
     CDOT_AS_TIMES: [ 'fr', 'ps', 'pt-pt'],
     DIV_AS_COLON: ['az', 'bg', 'cs', 'da', 'de', 'hu', 'hy', 'it', 'ky', 'lt',
-        'lv', 'nb', 'pl', 'pt-pt', 'ro', 'ru', 'sv', 'uk'],
+        'lv', 'nb', 'nl', 'pl', 'pt-pt', 'ro', 'ru', 'sv', 'uk'],
     // Trig functions
     SIN_AS_SEN: ['it', 'pt', 'pt-pt'],
     TAN_AS_TG: ['az', 'bg', 'cs', 'hu', 'hy', 'kk', 'km', 'ky', 'lt', 'lv',
-        'pl', 'pt', 'pt-pt', 'ro', 'ru'],
+        'pl', 'pt', 'pt-pt', 'ro', 'ru', 'uz'],
     COT_AS_COTG: ['cs', 'pt', 'pt-pt'],
     COT_AS_CTG: ['az', 'bg', 'hu', 'hy', 'kk', 'km', 'ky', 'lt', 'lv', 'pl',
-        'ro', 'ru'],
+        'ro', 'ru', 'uz'],
     CSC_AS_COSEC: ['as', 'az', 'bg', 'bn', 'cs', 'gu', 'hi', 'id', 'ja', 'kn',
-        'ky', 'lt', 'lv', 'mr', 'my', 'pa', 'pl', 'ro', 'ru', 'sv', 'ta', 'te',
-        'tr', 'uk'],
+        'ky', 'lt', 'lv', 'mr', 'my', 'nl', 'pa', 'pl', 'ro', 'ru', 'sv', 'ta',
+        'te', 'tr', 'uk'],
     CSC_AS_COSSEC: ['pt', 'pt-pt'],
     // Rules conditional on the translated template
     MAYBE_DIV_AS_COLON: ['id', 'lol'],
