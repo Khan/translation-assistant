@@ -36,7 +36,7 @@ jobs:
 
     - run: npm install --no-audit
       if: steps.npm-cache.outputs.cache-hit != 'true'
-    - run: env && npm run lint
+    - run: npm run lint
     - run: npm run build:coverage
     - run: npm run test:coverage:codecov
     - name: Codecov
