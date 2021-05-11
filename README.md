@@ -18,19 +18,33 @@ When a new team starts translations, they need to update the document
 with their math notations, and the rules must be added
 to `MATH_RULES_LOCALES` in `src/math_translator.js`.
 
+The math auto-translation code is also utilized in the [Khan Academy Dots](https://github.com/Khan/KhanAcademyDots/) browser plugin.
+
 ## For Devs
 
-To ignore eslint style-guide commits in blame history, use:
+### Deploying to webapp
+
+This repository is deployed to `webapp` by referencing a specific Git commit
+in `webapp/package.json`.
+
+To test the webapp build, use:
 ```sh
-git blame --ignore-revs-file .git-blame-ignore-revs
+yarn run build:webpack-prod-local
 ```
 
-or to do it automatically:
+To test the integration with the Translation Editor, use:
 ```sh
-git config blame.ignoreRevsFile .git-blame-ignore-revs
+yarn test javascript/manticore-package/
 ```
 
-## Tests and test coverage
+### Deploying to Khan Academy Dots plugin
+
+If you update the math auto-translation functionality in `src/math-translator.js`,
+you should also publish a new version of the Khan Academy Dots plugin,
+which uses this repository as a Git submodule. Please follow the guidelines
+in the repo [README](https://github.com/Khan/KhanAcademyDots/blob/master/README.md).
+
+### Tests and test coverage
 
 To run the tests:
 ```sh
@@ -42,15 +56,14 @@ To run the tests with test coverage, and report the results as text:
 npm run build:coverage && npm run test:coverage
 ```
 
-This repository is deployed to `webapp` as a git submodule 
-in `webapp/third_party/javascript-khansrc/`.
+### Git blame
 
-To test the webapp build, use:
+To ignore eslint style-guide commits in blame history, use:
 ```sh
-yarn run build:webpack-prod-local
+git blame --ignore-revs-file .git-blame-ignore-revs
 ```
 
-To test the integration with the Translation Editor, use:
+or to do it automatically:
 ```sh
-yarn test javascript/manticore-package/
+git config blame.ignoreRevsFile .git-blame-ignore-revs
 ```
