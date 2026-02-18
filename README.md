@@ -22,12 +22,12 @@ The math auto-translation code is also utilized in the [Khan Academy Dots](https
 
 ## For Devs
 
-### Deploying to webapp
+### Deploying
 
 This repository is deployed to `khan/frontend` by referencing a specific Git commit
 in `khan/frontend/pnpm-workspace.yaml`.
 
-To test the webapp build, use:
+To test the frontend build, use:
 ```sh
 APP_VERSION=local pnpm --filter devadmin build-app
 ```
