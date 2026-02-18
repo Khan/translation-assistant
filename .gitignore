@@ -2,3 +2,21 @@ node_modules
 package-lock.json
 .nyc_output/
 coverage/
+
+
+### OS/Editor-created files
+*.DS_Store
+.*.swp
+.*.un~
+/.tags
+/.tags_sorted_by_file
+/.tm_properties
+*.rej
+*.orig
+.idea
+out
+.vscode/settings.json
+/tags
+/TAGS
+/dataflow/**/*.iml
+*~
